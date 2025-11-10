@@ -1,35 +1,59 @@
 #pragma once
+
+#include "Announcement.h"
 #include <cstdint>
 #include <vector>
 #include <memory>
-using std::vector, std::unique_ptr;
-x
-//AS Class, node in internet grah
-class AS{
-private:
-    uint32_t asn_;           //ASN (unique ID)
-    vector<AS*> providers_;  
-    vector<AS*> customers_;
-    vector<AS*> peers_;
-    int propagation_rank_;
-    //unique_ptr<Policy> policy_;
+#include <unordered_map>
+#include <string>
 
+/**
+ * Autonomous System (AS) class
+ * Represents a node in the internet graph
+ */
+class AS {
 public:
+    // Constructor
     explicit AS(uint32_t asn);
     
-    //getters
-    uint32_t getASN() const {return asn_;}
-    const vector<AS*>& getProviders() const {return providers_;}
-    const vector<AS*>& getCustomers() const {return customers_;}
-    const vector<AS*>& getPeers() const {return peers_;}
-    int getPropagationRank() const {return propagation_rank_;}
-
-    //setters
+    // Getters
+    uint32_t getASN() const { return asn_; }
+    const std::vector<AS*>& getProviders() const { return providers_; }
+    const std::vector<AS*>& getCustomers() const { return customers_; }
+    const std::vector<AS*>& getPeers() const { return peers_; }
+    int getPropagationRank() const { return propagation_rank_; }
+    
+    // Setters
+    void setPropagationRank(int rank) { propagation_rank_ = rank; }
+    
+    // Relationship management
     void addProvider(AS* provider);
     void addCustomer(AS* customer);
     void addPeer(AS* peer);
-
-    // Helper methods 
-    bool hasCustomers() const {return !customers_.empty();}
-    bool hasProviders() const {return !providers_.empty();}
+    
+    // Helper methods
+    bool hasCustomers() const { return !customers_.empty(); }
+    bool hasProviders() const { return !providers_.empty(); }
+    
+    // Announcement/Routing (Day 3)
+    void receiveAnnouncement(const Announcement& ann, AS* from);
+    void originatePrefix(const std::string& prefix);
+    const std::unordered_map<std::string, Announcement>& getRoutingTable() const { 
+        return routing_table_; 
+    }
+    
+private:
+    uint32_t asn_;                    // Autonomous System Number (unique ID)
+    std::vector<AS*> providers_;      // ASes that provide service to this AS
+    std::vector<AS*> customers_;      // ASes that this AS provides service to
+    std::vector<AS*> peers_;          // ASes that peer with this AS
+    int propagation_rank_;            // Rank for propagation (will be set later)
+    
+    // Routing table: prefix -> best announcement
+    std::unordered_map<std::string, Announcement> routing_table_;
+    
+    // BGP decision process
+    bool shouldAccept(const Announcement& ann, AS* from) const;
+    bool isBetterPath(const Announcement& new_ann, const Announcement& old_ann) const;
+    void propagateToNeighbors(const Announcement& ann);
 };

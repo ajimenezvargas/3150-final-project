@@ -1,15 +1,17 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -O2
-LDFLAGS =
+INCLUDES = -I./include -I./src
+LDFLAGS = -lcurl
 
 # Directories
 SRC_DIR = src
+INCLUDE_DIR = include
 BUILD_DIR = build
 DATA_DIR = data
 
 # Source files
-SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/AS.cpp
-OBJECTS = $(BUILD_DIR)/main.o $(BUILD_DIR)/AS.o
+SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/AS.cpp $(SRC_DIR)/ASGraph.cpp $(SRC_DIR)/Announcement.cpp
+OBJECTS = $(BUILD_DIR)/main.o $(BUILD_DIR)/AS.o $(BUILD_DIR)/ASGraph.o $(BUILD_DIR)/Announcement.o
 TARGET = bgp_sim
 
 # Default target
@@ -30,7 +32,7 @@ $(TARGET): $(OBJECTS)
 
 # Compile source files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Clean build artifacts
 clean:

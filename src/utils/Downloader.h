@@ -165,20 +165,21 @@ inline bool downloadFile(const std::string& url, const std::string& output_path)
 inline std::string getCAIDAUrl() {
     auto now = std::time(nullptr);
     auto tm = *std::localtime(&now);
-    
-    tm.tm_mon -= 1;
+
+    // Go back 2 months to ensure data is released (CAIDA publishes on the 5th)
+    tm.tm_mon -= 2;
     if (tm.tm_mon < 0) {
-        tm.tm_mon = 11;
+        tm.tm_mon += 12;
         tm.tm_year -= 1;
     }
-    
+
     char buffer[32];
     std::strftime(buffer, sizeof(buffer), "%Y%m", &tm);
-    
+
     std::string url = "https://publicdata.caida.org/datasets/as-relationships/serial-1/";
     url += buffer;
     url += "01.as-rel.txt.bz2";
-    
+
     return url;
 }
 

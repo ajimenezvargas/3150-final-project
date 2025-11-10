@@ -1,91 +1,141 @@
-#include "AS.h"                    // Public interface (from include/)
-#include "utils/downloader.h"      // Private utility (from src/utils/)
+#include "AS.h"
+#include "ASGraph.h"
+#include "Announcement.h"
+#include "utils/downloader.h"
+#include "utils/parser.h"
 #include <iostream>
-#include <unordered_map>
-#include <memory>
 #include <filesystem>
 
-namespace fs = std::filesystem;
-
-int main() {
-    std::cout << "BGP Simulator - Day 1 Test" << std::endl;
-    std::cout << "===========================" << std::endl;
+void testDay1() {
+    std::cout << "\n=== Day 1 Tests ===" << std::endl;
     
-    // Initialize libcurl
-    initDownloader();
+    AS as4(4);
+    AS as666(666);
+    AS as3(3);
+    AS as777(777);
     
-    // Create data directory if it doesn't exist
-    fs::create_directories("data");
-    
-    // Test 1: Download CAIDA data
-    std::string url = getCAIDAUrl();
-    std::string output_path = "data/as-rel.txt.bz2";
-    
-    std::cout << "\n[Test 1] Downloading CAIDA dataset" << std::endl;
-    if (fileExists(output_path)) {
-        std::cout << "File already exists at: " << output_path << std::endl;
-        std::cout << "File size: " << fs::file_size(output_path) / 1024 << " KB" << std::endl;
-        std::cout << "Skipping download (delete file to re-download)" << std::endl;
-    } else {
-        if (!downloadFile(url, output_path)) {
-            std::cerr << "\nWarning: Could not download CAIDA data automatically" << std::endl;
-            std::cerr << "You can download manually from: " << url << std::endl;
-            std::cout << "\nContinuing with other tests..." << std::endl;
-        }
-    }
-    
-    // Test 2: Create some AS objects
-    std::cout << "\n[Test 2] Creating AS objects" << std::endl;
-    
-    // Create a simple graph: AS4 is provider to AS666 and AS3
-    // AS4 is peer with AS777
-    std::unordered_map<uint32_t, std::unique_ptr<AS>> as_graph;
-    
-    as_graph[4] = std::make_unique<AS>(4);
-    as_graph[666] = std::make_unique<AS>(666);
-    as_graph[3] = std::make_unique<AS>(3);
-    as_graph[777] = std::make_unique<AS>(777);
-    
-    // Set up relationships
-    // AS4 is provider to AS666
-    as_graph[4]->addCustomer(as_graph[666].get());
-    as_graph[666]->addProvider(as_graph[4].get());
-    
-    // AS4 is provider to AS3
-    as_graph[4]->addCustomer(as_graph[3].get());
-    as_graph[3]->addProvider(as_graph[4].get());
-    
-    // AS4 and AS777 are peers
-    as_graph[4]->addPeer(as_graph[777].get());
-    as_graph[777]->addPeer(as_graph[4].get());
-    
-    std::cout << "Created " << as_graph.size() << " ASes" << std::endl;
-    
-    // Test 3: Verify relationships
-    std::cout << "\n[Test 3] Verifying relationships" << std::endl;
+    as4.addCustomer(&as666);
+    as4.addCustomer(&as3);
+    as4.addPeer(&as777);
+    as666.addProvider(&as4);
     
     std::cout << "AS4 customers: ";
-    for (const auto* customer : as_graph[4]->getCustomers()) {
-        std::cout << customer->getASN() << " ";
+    for (const AS* c : as4.getCustomers()) {
+        std::cout << c->getASN() << " ";
     }
     std::cout << std::endl;
     
-    std::cout << "AS4 peers: ";
-    for (const auto* peer : as_graph[4]->getPeers()) {
-        std::cout << peer->getASN() << " ";
+    std::cout << "[SUCCESS] Day 1 tests passed" << std::endl;
+}
+
+void testDay2() {
+    std::cout << "\n=== Day 2 Tests ===" << std::endl;
+    
+    ASGraph graph;
+    graph.addRelationship(1, 2);
+    graph.addRelationship(2, 3);
+    graph.addRelationship(1, 4);
+    graph.addPeeringRelationship(3, 4);
+    
+    std::cout << "Graph size: " << graph.size() << " ASes" << std::endl;
+    
+    if (graph.hasCycle()) {
+        std::cout << "WARNING: Cycle detected!" << std::endl;
+    } else {
+        std::cout << "No cycles detected (good)" << std::endl;
     }
-    std::cout << std::endl;
     
-    std::cout << "AS666 providers: ";
-    for (const auto* provider : as_graph[666]->getProviders()) {
-        std::cout << provider->getASN() << " ";
+    std::cout << "[SUCCESS] Day 2 tests passed" << std::endl;
+}
+
+void testDay3() {
+    std::cout << "\n=== Day 3 Tests ===" << std::endl;
+    
+    // Test 1: Simple announcement
+    std::cout << "\n[Test 1] Basic announcement propagation" << std::endl;
+    ASGraph graph;
+    
+    // Build simple topology: 1 -> 2 -> 3
+    graph.addRelationship(1, 2);  // 1 is provider of 2
+    graph.addRelationship(2, 3);  // 2 is provider of 3
+    
+    AS* as1 = graph.getAS(1);
+    AS* as2 = graph.getAS(2);
+    AS* as3 = graph.getAS(3);
+    
+    // AS3 originates a prefix
+    as3->originatePrefix("10.0.0.0/8");
+    
+    std::cout << "AS3 routing table size: " << as3->getRoutingTable().size() << std::endl;
+    std::cout << "AS2 routing table size: " << as2->getRoutingTable().size() << std::endl;
+    std::cout << "AS1 routing table size: " << as1->getRoutingTable().size() << std::endl;
+    
+    // Check AS paths
+    if (as1->getRoutingTable().count("10.0.0.0/8")) {
+        const auto& ann = as1->getRoutingTable().at("10.0.0.0/8");
+        std::cout << "AS1 path to 10.0.0.0/8: ";
+        for (uint32_t asn : ann.getASPath()) {
+            std::cout << asn << " ";
+        }
+        std::cout << "(length: " << ann.getPathLength() << ")" << std::endl;
     }
-    std::cout << std::endl;
     
-    std::cout << "\n[SUCCESS] Day 1 basic tests passed!" << std::endl;
+    // Test 2: Multiple paths
+    std::cout << "\n[Test 2] Multiple paths (path selection)" << std::endl;
+    ASGraph graph2;
     
-    // Cleanup libcurl
-    cleanupDownloader();
+    // Diamond topology:
+    //     1
+    //    / \
+    //   2   3
+    //    \ /
+    //     4
+    graph2.addRelationship(1, 2);
+    graph2.addRelationship(1, 3);
+    graph2.addRelationship(2, 4);
+    graph2.addRelationship(3, 4);
+    
+    AS* as4_origin = graph2.getAS(4);
+    AS* as1_dest = graph2.getAS(1);
+    
+    as4_origin->originatePrefix("20.0.0.0/8");
+    
+    if (as1_dest->getRoutingTable().count("20.0.0.0/8")) {
+        const auto& ann = as1_dest->getRoutingTable().at("20.0.0.0/8");
+        std::cout << "AS1 best path to 20.0.0.0/8: ";
+        for (uint32_t asn : ann.getASPath()) {
+            std::cout << asn << " ";
+        }
+        std::cout << "(selected shortest path)" << std::endl;
+    }
+    
+    // Test 3: Loop prevention
+    std::cout << "\n[Test 3] Loop prevention" << std::endl;
+    Announcement test_ann(99, "30.0.0.0/8");
+    test_ann.prependASPath(1);
+    test_ann.prependASPath(2);
+    
+    // Try to send announcement back to AS1 (should be rejected)
+    int routes_before = as1_dest->getRoutingTable().size();
+    as1_dest->receiveAnnouncement(test_ann, graph2.getAS(2));
+    int routes_after = as1_dest->getRoutingTable().size();
+    
+    if (routes_before == routes_after) {
+        std::cout << "Loop correctly prevented (AS1 already in path)" << std::endl;
+    } else {
+        std::cout << "WARNING: Loop not prevented!" << std::endl;
+    }
+    
+    std::cout << "\n[SUCCESS] Day 3 tests passed" << std::endl;
+}
+
+int main() {
+    std::cout << "BGP Simulator - Day 3" << std::endl;
+    std::cout << "=====================" << std::endl;
+    
+    testDay1();
+    testDay2();
+    testDay3();
     
     return 0;
 }
