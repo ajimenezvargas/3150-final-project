@@ -1,5 +1,6 @@
 #include "AS.h"
 #include "Announcement.h"
+#include "Policy.h"
 #include <algorithm>
 
 AS::AS(uint32_t asn) : asn_(asn), propagation_rank_(-1) {}
@@ -22,10 +23,11 @@ void AS::addPeer(AS* peer) {
     }
 }
 
-// Day 3: Announcement handling
+// Day 3-4: Announcement handling with policies
 
 void AS::originatePrefix(const std::string& prefix) {
     Announcement ann(asn_, prefix);
+    ann.setRelationship(Relationship::ORIGIN);
     routing_table_.insert({prefix, ann});
     propagateToNeighbors(ann);
 }
@@ -41,9 +43,13 @@ void AS::receiveAnnouncement(const Announcement& ann, AS* from) {
         return;
     }
     
+    // Determine relationship with sender
+    Relationship rel = Policy::getRelationship(from, this);
+    
     // Create a copy and prepend our ASN
     Announcement new_ann = ann.copy();
     new_ann.prependASPath(asn_);
+    new_ann.setRelationship(rel);
     
     const std::string& prefix = ann.getPrefix();
     
@@ -54,7 +60,7 @@ void AS::receiveAnnouncement(const Announcement& ann, AS* from) {
         routing_table_.insert({prefix, new_ann});
         propagateToNeighbors(new_ann);
     } else {
-        // Have existing route - compare
+        // Have existing route - compare with policy-aware decision
         if (isBetterPath(new_ann, it->second)) {
             it->second = new_ann;
             propagateToNeighbors(new_ann);
@@ -72,8 +78,17 @@ bool AS::shouldAccept(const Announcement&, AS* from) const {
 }
 
 bool AS::isBetterPath(const Announcement& new_ann, const Announcement& old_ann) const {
-    // Simplified BGP decision process:
-    // 1. Prefer shorter AS path
+    // BGP decision process with policies:
+    
+    // 1. Prefer higher local preference (based on relationship)
+    if (new_ann.getLocalPref() > old_ann.getLocalPref()) {
+        return true;
+    }
+    if (new_ann.getLocalPref() < old_ann.getLocalPref()) {
+        return false;
+    }
+    
+    // 2. Prefer shorter AS path
     if (new_ann.getPathLength() < old_ann.getPathLength()) {
         return true;
     }
@@ -81,23 +96,31 @@ bool AS::isBetterPath(const Announcement& new_ann, const Announcement& old_ann) 
         return false;
     }
     
-    // 2. Tie-break by origin ASN (lower is better)
+    // 3. Tie-break by origin ASN (lower is better for stability)
     return new_ann.getOrigin() < old_ann.getOrigin();
 }
 
 void AS::propagateToNeighbors(const Announcement& ann) {
-    // Export to all customers
+    Relationship learnedFrom = ann.getRelationship();
+    
+    // Export to customers (if policy allows)
     for (AS* customer : customers_) {
-        customer->receiveAnnouncement(ann, this);
+        if (Policy::shouldExport(learnedFrom, Relationship::CUSTOMER)) {
+            customer->receiveAnnouncement(ann, this);
+        }
     }
     
-    // Export to all peers
+    // Export to peers (if policy allows)
     for (AS* peer : peers_) {
-        peer->receiveAnnouncement(ann, this);
+        if (Policy::shouldExport(learnedFrom, Relationship::PEER)) {
+            peer->receiveAnnouncement(ann, this);
+        }
     }
     
-    // Export to all providers
+    // Export to providers (if policy allows)
     for (AS* provider : providers_) {
-        provider->receiveAnnouncement(ann, this);
+        if (Policy::shouldExport(learnedFrom, Relationship::PROVIDER)) {
+            provider->receiveAnnouncement(ann, this);
+        }
     }
 }
