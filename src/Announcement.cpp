@@ -11,6 +11,12 @@ void Announcement::prependASPath(uint32_t asn) {
     as_path_.insert(as_path_.begin(), asn);
 }
 
+void Announcement::prependASPath(uint32_t asn, int count) {
+    for (int i = 0; i < count; i++) {
+        as_path_.insert(as_path_.begin(), asn);
+    }
+}
+
 bool Announcement::hasASN(uint32_t asn) const {
     return std::find(as_path_.begin(), as_path_.end(), asn) != as_path_.end();
 }
@@ -26,5 +32,6 @@ Announcement Announcement::copy() const {
     ann.relationship_ = relationship_;
     ann.local_pref_ = local_pref_;
     ann.rov_state_ = rov_state_;
+    ann.communities_ = communities_;
     return ann;
 }

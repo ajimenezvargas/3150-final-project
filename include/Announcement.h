@@ -2,6 +2,7 @@
 
 #include "Policy.h"
 #include "ROV.h"
+#include "Community.h"
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -26,6 +27,8 @@ public:
     Relationship getRelationship() const { return relationship_; }
     int getLocalPref() const { return local_pref_; }
     ROVState getROVState() const { return rov_state_; }
+    const CommunitySet& getCommunities() const { return communities_; }
+    CommunitySet& getCommunities() { return communities_; }
     
     // Setters
     void setRelationship(Relationship rel);
@@ -34,8 +37,14 @@ public:
     
     // Path manipulation
     void prependASPath(uint32_t asn);
+    void prependASPath(uint32_t asn, int count);  // Prepend multiple times (Day 6)
     bool hasASN(uint32_t asn) const;
     int getPathLength() const { return as_path_.size(); }
+    
+    // Community manipulation (Day 6)
+    void addCommunity(uint32_t community) { communities_.add(community); }
+    void removeCommunity(uint32_t community) { communities_.remove(community); }
+    bool hasCommunity(uint32_t community) const { return communities_.has(community); }
     
     // Copy announcement (for propagation)
     Announcement copy() const;
@@ -47,4 +56,5 @@ private:
     Relationship relationship_;      // How this route was learned
     int local_pref_;                 // Local preference value
     ROVState rov_state_;             // ROV validation state
+    CommunitySet communities_;       // BGP communities (Day 6)
 };

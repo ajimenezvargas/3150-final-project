@@ -144,11 +144,24 @@ bool AS::isBetterPath(const Announcement& new_ann, const Announcement& old_ann) 
 void AS::propagateToNeighbors(const Announcement& ann) {
     Relationship learnedFrom = ann.getRelationship();
     
+    // Check for NO_ADVERTISE community - don't propagate at all
+    if (ann.getCommunities().hasNoAdvertise()) {
+        return;  // Don't advertise to anyone
+    }
+    
+    // Check for NO_EXPORT community - only advertise to customers
+    bool no_export = ann.getCommunities().hasNoExport();
+    
     // Export to customers (if policy allows)
     for (AS* customer : customers_) {
         if (Policy::shouldExport(learnedFrom, Relationship::CUSTOMER)) {
             customer->receiveAnnouncement(ann, this);
         }
+    }
+    
+    // Don't export to peers/providers if NO_EXPORT is set
+    if (no_export) {
+        return;
     }
     
     // Export to peers (if policy allows)
