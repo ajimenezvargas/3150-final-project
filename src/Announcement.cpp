@@ -25,5 +25,6 @@ Announcement Announcement::copy() const {
     ann.as_path_ = as_path_;
     ann.relationship_ = relationship_;
     ann.local_pref_ = local_pref_;
+    ann.rov_state_ = rov_state_;
     return ann;
 }

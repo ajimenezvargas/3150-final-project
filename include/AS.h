@@ -35,12 +35,17 @@ public:
     bool hasCustomers() const { return !customers_.empty(); }
     bool hasProviders() const { return !providers_.empty(); }
     
-    // Announcement/Routing (Day 3)
+    // Announcement/Routing (Day 3-5)
     void receiveAnnouncement(const Announcement& ann, AS* from);
     void originatePrefix(const std::string& prefix);
     const std::unordered_map<std::string, Announcement>& getRoutingTable() const { 
         return routing_table_; 
     }
+    
+    // ROV Support (Day 5)
+    void setROVValidator(const ROVValidator* validator) { rov_validator_ = validator; }
+    void setDropInvalid(bool drop) { drop_invalid_ = drop; }
+    bool getDropInvalid() const { return drop_invalid_; }
     
 private:
     uint32_t asn_;                    // Autonomous System Number (unique ID)
@@ -51,6 +56,10 @@ private:
     
     // Routing table: prefix -> best announcement
     std::unordered_map<std::string, Announcement> routing_table_;
+    
+    // ROV (Day 5)
+    const ROVValidator* rov_validator_;  // Pointer to graph's validator
+    bool drop_invalid_;                   // Drop INVALID routes?
     
     // BGP decision process
     bool shouldAccept(const Announcement& ann, AS* from) const;
