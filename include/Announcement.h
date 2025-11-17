@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Policy.h"
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -9,7 +10,7 @@
  */
 class Announcement {
 public:
-    Announcement() : origin_(0), prefix_("") {}
+    Announcement() : origin_(0), prefix_(""), relationship_(Relationship::PROVIDER), local_pref_(100) {}
     Announcement(uint32_t origin, const std::string& prefix);
     
     // Copy constructor and assignment
@@ -20,6 +21,12 @@ public:
     uint32_t getOrigin() const { return origin_; }
     const std::string& getPrefix() const { return prefix_; }
     const std::vector<uint32_t>& getASPath() const { return as_path_; }
+    Relationship getRelationship() const { return relationship_; }
+    int getLocalPref() const { return local_pref_; }
+    
+    // Setters
+    void setRelationship(Relationship rel);
+    void setLocalPref(int pref) { local_pref_ = pref; }
     
     // Path manipulation
     void prependASPath(uint32_t asn);
@@ -30,7 +37,9 @@ public:
     Announcement copy() const;
     
 private:
-    uint32_t origin_;              // Originating AS
-    std::string prefix_;           // IP prefix (e.g., "1.0.0.0/24")
-    std::vector<uint32_t> as_path_; // AS path
+    uint32_t origin_;                // Originating AS
+    std::string prefix_;             // IP prefix (e.g., "1.0.0.0/24")
+    std::vector<uint32_t> as_path_;  // AS path
+    Relationship relationship_;      // How this route was learned
+    int local_pref_;                 // Local preference value
 };
