@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AS.h"
+#include "ROV.h"
 #include <unordered_map>
 #include <memory>
 #include <string>
@@ -11,7 +12,7 @@
  */
 class ASGraph {
 public:
-    ASGraph() = default;
+    ASGraph() : rov_enabled_(false) {}
     
     // Graph construction
     AS* getOrCreateAS(uint32_t asn);
@@ -27,8 +28,16 @@ public:
     bool hasCycle() const;
     std::vector<uint32_t> findCycle() const;
     
+    // ROV Support (Day 5)
+    ROVValidator& getROVValidator() { return rov_validator_; }
+    const ROVValidator& getROVValidator() const { return rov_validator_; }
+    void enableROV(bool enable) { rov_enabled_ = enable; }
+    bool isROVEnabled() const { return rov_enabled_; }
+    
 private:
     std::unordered_map<uint32_t, std::unique_ptr<AS>> ases_;
+    ROVValidator rov_validator_;
+    bool rov_enabled_;
     
     // Cycle detection helper
     bool hasCycleDFS(const AS* node, 

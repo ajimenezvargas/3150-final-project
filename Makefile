@@ -10,8 +10,8 @@ BUILD_DIR = build
 DATA_DIR = data
 
 # Source files
-SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/AS.cpp $(SRC_DIR)/ASGraph.cpp $(SRC_DIR)/Announcement.cpp $(SRC_DIR)/Policy.cpp
-OBJECTS = $(BUILD_DIR)/main.o $(BUILD_DIR)/AS.o $(BUILD_DIR)/ASGraph.o $(BUILD_DIR)/Announcement.o $(BUILD_DIR)/Policy.o
+SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/AS.cpp $(SRC_DIR)/ASGraph.cpp $(SRC_DIR)/Announcement.cpp $(SRC_DIR)/Policy.cpp $(SRC_DIR)/ROV.cpp $(SRC_DIR)/Community.cpp
+OBJECTS = $(BUILD_DIR)/main.o $(BUILD_DIR)/AS.o $(BUILD_DIR)/ASGraph.o $(BUILD_DIR)/Announcement.o $(BUILD_DIR)/Policy.o $(BUILD_DIR)/ROV.o $(BUILD_DIR)/Community.o
 TARGET = bgp_sim
 
 # Default target

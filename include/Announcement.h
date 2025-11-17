@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Policy.h"
+#include "ROV.h"
+#include "Community.h"
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -10,7 +12,8 @@
  */
 class Announcement {
 public:
-    Announcement() : origin_(0), prefix_(""), relationship_(Relationship::PROVIDER), local_pref_(100) {}
+    Announcement() : origin_(0), prefix_(""), relationship_(Relationship::PROVIDER), 
+                     local_pref_(100), rov_state_(ROVState::UNKNOWN) {}
     Announcement(uint32_t origin, const std::string& prefix);
     
     // Copy constructor and assignment
@@ -23,15 +26,25 @@ public:
     const std::vector<uint32_t>& getASPath() const { return as_path_; }
     Relationship getRelationship() const { return relationship_; }
     int getLocalPref() const { return local_pref_; }
+    ROVState getROVState() const { return rov_state_; }
+    const CommunitySet& getCommunities() const { return communities_; }
+    CommunitySet& getCommunities() { return communities_; }
     
     // Setters
     void setRelationship(Relationship rel);
     void setLocalPref(int pref) { local_pref_ = pref; }
+    void setROVState(ROVState state) { rov_state_ = state; }
     
     // Path manipulation
     void prependASPath(uint32_t asn);
+    void prependASPath(uint32_t asn, int count);  // Prepend multiple times (Day 6)
     bool hasASN(uint32_t asn) const;
     int getPathLength() const { return as_path_.size(); }
+    
+    // Community manipulation (Day 6)
+    void addCommunity(uint32_t community) { communities_.add(community); }
+    void removeCommunity(uint32_t community) { communities_.remove(community); }
+    bool hasCommunity(uint32_t community) const { return communities_.has(community); }
     
     // Copy announcement (for propagation)
     Announcement copy() const;
@@ -42,4 +55,6 @@ private:
     std::vector<uint32_t> as_path_;  // AS path
     Relationship relationship_;      // How this route was learned
     int local_pref_;                 // Local preference value
+    ROVState rov_state_;             // ROV validation state
+    CommunitySet communities_;       // BGP communities (Day 6)
 };

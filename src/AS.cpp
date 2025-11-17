@@ -3,7 +3,8 @@
 #include "Policy.h"
 #include <algorithm>
 
-AS::AS(uint32_t asn) : asn_(asn), propagation_rank_(-1) {}
+AS::AS(uint32_t asn) 
+    : asn_(asn), propagation_rank_(-1), rov_validator_(nullptr), drop_invalid_(false) {}
 
 void AS::addProvider(AS* provider) {
     if (provider && std::find(providers_.begin(), providers_.end(), provider) == providers_.end()) {
@@ -23,11 +24,18 @@ void AS::addPeer(AS* peer) {
     }
 }
 
-// Day 3-4: Announcement handling with policies
+// Day 3-5: Announcement handling with policies and ROV
 
 void AS::originatePrefix(const std::string& prefix) {
     Announcement ann(asn_, prefix);
     ann.setRelationship(Relationship::ORIGIN);
+    
+    // Validate with ROV if available
+    if (rov_validator_) {
+        ROVState state = rov_validator_->validate(prefix, asn_);
+        ann.setROVState(state);
+    }
+    
     routing_table_.insert({prefix, ann});
     propagateToNeighbors(ann);
 }
@@ -43,13 +51,24 @@ void AS::receiveAnnouncement(const Announcement& ann, AS* from) {
         return;
     }
     
-    // Determine relationship with sender
-    Relationship rel = Policy::getRelationship(from, this);
-    
     // Create a copy and prepend our ASN
     Announcement new_ann = ann.copy();
     new_ann.prependASPath(asn_);
+    
+    // Determine relationship with sender
+    Relationship rel = Policy::getRelationship(from, this);
     new_ann.setRelationship(rel);
+    
+    // Validate with ROV if available (Day 5)
+    if (rov_validator_) {
+        ROVState state = rov_validator_->validate(new_ann.getPrefix(), new_ann.getOrigin());
+        new_ann.setROVState(state);
+        
+        // Drop INVALID routes if configured
+        if (drop_invalid_ && state == ROVState::INVALID) {
+            return;  // Reject invalid route
+        }
+    }
     
     const std::string& prefix = ann.getPrefix();
     
@@ -78,7 +97,29 @@ bool AS::shouldAccept(const Announcement&, AS* from) const {
 }
 
 bool AS::isBetterPath(const Announcement& new_ann, const Announcement& old_ann) const {
-    // BGP decision process with policies:
+    // BGP decision process with policies and ROV:
+    
+    // 0. ROV state (if enabled) - VALID > UNKNOWN > INVALID
+    if (rov_validator_) {
+        ROVState new_state = new_ann.getROVState();
+        ROVState old_state = old_ann.getROVState();
+        
+        // Prefer VALID over UNKNOWN
+        if (new_state == ROVState::VALID && old_state != ROVState::VALID) {
+            return true;
+        }
+        if (old_state == ROVState::VALID && new_state != ROVState::VALID) {
+            return false;
+        }
+        
+        // Prefer UNKNOWN over INVALID
+        if (new_state == ROVState::UNKNOWN && old_state == ROVState::INVALID) {
+            return true;
+        }
+        if (old_state == ROVState::UNKNOWN && new_state == ROVState::INVALID) {
+            return false;
+        }
+    }
     
     // 1. Prefer higher local preference (based on relationship)
     if (new_ann.getLocalPref() > old_ann.getLocalPref()) {
@@ -103,11 +144,24 @@ bool AS::isBetterPath(const Announcement& new_ann, const Announcement& old_ann) 
 void AS::propagateToNeighbors(const Announcement& ann) {
     Relationship learnedFrom = ann.getRelationship();
     
+    // Check for NO_ADVERTISE community - don't propagate at all
+    if (ann.getCommunities().hasNoAdvertise()) {
+        return;  // Don't advertise to anyone
+    }
+    
+    // Check for NO_EXPORT community - only advertise to customers
+    bool no_export = ann.getCommunities().hasNoExport();
+    
     // Export to customers (if policy allows)
     for (AS* customer : customers_) {
         if (Policy::shouldExport(learnedFrom, Relationship::CUSTOMER)) {
             customer->receiveAnnouncement(ann, this);
         }
+    }
+    
+    // Don't export to peers/providers if NO_EXPORT is set
+    if (no_export) {
+        return;
     }
     
     // Export to peers (if policy allows)
