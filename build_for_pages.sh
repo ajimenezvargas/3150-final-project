@@ -10,6 +10,13 @@ if [ -f "dist/bgp_simulator_wasm.wasm" ] && [ -f "dist/bgp_simulator_wasm.js" ];
     exit 0
 fi
 
+# Install cmake if not available
+if ! command -v cmake &> /dev/null; then
+    echo "⚠️  CMake not found, installing..."
+    apt-get update -qq
+    apt-get install -y -qq cmake > /dev/null 2>&1
+fi
+
 # Try to use emsdk if available
 if ! command -v emcc &> /dev/null; then
     echo "⚠️  Emscripten not found in PATH, installing..."
