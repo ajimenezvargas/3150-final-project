@@ -30,9 +30,4 @@ crons = []
 [[rules]]
 type = "Basic"
 action = "redirect"
-rulesets = [
-  {
-    urlPath = "^http://"
-    redirect = "https://domain.example.com$0"
-  }
-]
+rulesets = [{urlPath = "^http://"redirect = "https://domain.example.com$0"}]
