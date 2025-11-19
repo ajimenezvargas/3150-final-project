@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+
 /**
  * BGP Announcement - represents a route announcement
  */
