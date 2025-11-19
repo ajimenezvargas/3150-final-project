@@ -18,8 +18,8 @@ public:
     
     // Generate CSV string (for testing)
     static std::string generateCSV(const ASGraph& graph);
-    
-private:
+
+    private: //test
     // Format AS path as space-separated string
     static std::string formatASPath(const std::vector<uint32_t>& path);
 };
