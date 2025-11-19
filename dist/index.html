@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BGP Simulator - Cloudflare Edition</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>BGP Simulator</h1>
+                <p>Cloudflare Network Optimization Tool</p>
+                <p class="subtitle">Simulate BGP routing and AS path analysis in your browser</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="section">
+                <h2>1. Upload Data Files</h2>
+                <div class="upload-grid">
+                    <div class="upload-card">
+                        <div class="upload-icon">📊</div>
+                        <h3>CAIDA AS Relationships</h3>
+                        <p>Upload CAIDA topology data (as-rel.txt)</p>
+                        <label class="file-input-label">
+                            <input type="file" id="caida-file" class="file-input" accept=".txt">
+                            <span class="file-button">Choose File</span>
+                        </label>
+                        <p class="file-status" id="caida-status"></p>
+                    </div>
+
+                    <div class="upload-card">
+                        <div class="upload-icon">📝</div>
+                        <h3>BGP Announcements</h3>
+                        <p>CSV with origin ASN, prefix, ROV flag</p>
+                        <label class="file-input-label">
+                            <input type="file" id="announcements-file" class="file-input" accept=".csv">
+                            <span class="file-button">Choose File</span>
+                        </label>
+                        <p class="file-status" id="announcements-status"></p>
+                    </div>
+
+                    <div class="upload-card">
+                        <div class="upload-icon">🔒</div>
+                        <h3>ROV ASNs (Optional)</h3>
+                        <p>CSV with ASNs that have ROV enabled</p>
+                        <label class="file-input-label">
+                            <input type="file" id="rov-file" class="file-input" accept=".csv">
+                            <span class="file-button">Choose File</span>
+                        </label>
+                        <p class="file-status" id="rov-status"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration Section -->
+            <section class="section">
+                <h2>2. Query Configuration</h2>
+                <div class="config-form">
+                    <div class="form-group">
+                        <label for="target-asn">Target ASN:</label>
+                        <input type="number" id="target-asn" placeholder="Enter ASN to analyze (e.g., 15169)" min="1" max="4294967295">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Section -->
+            <section class="section">
+                <h2>3. Run Simulation</h2>
+                <div class="action-buttons">
+                    <button id="run-button" class="btn btn-primary" onclick="runSimulation()">
+                        Run Simulation
+                    </button>
+                    <button id="reset-button" class="btn btn-secondary" onclick="resetSimulation()">
+                        Reset
+                    </button>
+                </div>
+                <div id="status-message" class="status-message"></div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="section" id="results-section" style="display: none;">
+                <h2>Results</h2>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-ases">0</div>
+                        <div class="stat-label">Total ASes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-routes">0</div>
+                        <div class="stat-label">Total Routes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-announced">0</div>
+                        <div class="stat-label">Announcements</div>
+                    </div>
+                </div>
+
+                <div class="results-container">
+                    <div class="results-panel">
+                        <h3>Routes for ASN <span id="query-asn">-</span></h3>
+                        <div id="routes-table" class="routes-table">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="results-panel">
+                        <h3>Export Results</h3>
+                        <button id="export-button" class="btn btn-secondary" onclick="downloadResults()">
+                            Download CSV
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Help Section -->
+            <section class="section help-section">
+                <h2>Help & Format</h2>
+                <div class="help-content">
+                    <div class="help-card">
+                        <h3>CAIDA Format</h3>
+                        <p>The CAIDA AS relationships file should contain lines like:</p>
+                        <pre>1234|5678|-1
+# asn1 | asn2 | relationship
+# -1 = customer, 0 = peer, 1 = provider</pre>
+                    </div>
+                    <div class="help-card">
+                        <h3>Announcements Format</h3>
+                        <p>CSV file with three columns (header optional):</p>
+                        <pre>origin_asn,prefix,rov_invalid
+15169,8.8.8.0/24,false
+13335,1.1.1.0/24,false</pre>
+                    </div>
+                    <div class="help-card">
+                        <h3>ROV ASNs Format</h3>
+                        <p>CSV file with a single column (header optional):</p>
+                        <pre>asn
+4
+5
+10</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>BGP Simulator v1.0 | Powered by WebAssembly | <a href="https://github.com/yourusername/bgp-simulator">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="bgp_simulator_wasm.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
