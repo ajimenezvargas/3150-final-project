@@ -1,33 +1,9 @@
 name = "bgp-simulator"
-main = "dist/index.html"
 compatibility_date = "2024-11-19"
 
-# Cloudflare Pages configuration
+# This is a Cloudflare Pages project
+# Build configuration is handled by Pages settings in the dashboard
+# No need for complex wrangler config for static site
+
 [env.production]
-route = "*"
-
-# Build configuration
-[build]
-command = "./build_wasm.sh"
-cwd = "./"
-
-# Assets directory (where the web files are)
-assets_dir = "dist"
-
-# Environment variables
-[env.production.vars]
-ENVIRONMENT = "production"
-
-# Allow memory growth in WASM
-[limits]
-cpu_ms = 50000
-
-# Caching rules
-[triggers]
-crons = []
-
-# Redirect HTTP to HTTPS
-[[rules]]
-type = "Basic"
-action = "redirect"
-rulesets = [{urlPath = "^http://"redirect = "https://domain.example.com$0"}]
+name = "bgp-simulator-prod"
