@@ -1,0 +1,22 @@
+# BGP Announcements CSV
+# Format: origin_asn,prefix
+# Lines starting with # are comments
+
+# Google
+15169,8.8.8.0/24
+15169,8.8.4.0/24
+
+# Cloudflare
+13335,1.1.1.0/24
+13335,1.0.0.0/24
+
+# Level 3
+3356,4.0.0.0/8
+
+# AT&T
+7018,12.0.0.0/8
+
+# Example prefixes
+100,10.0.0.0/8
+200,20.0.0.0/8
+300,30.0.0.0/8
