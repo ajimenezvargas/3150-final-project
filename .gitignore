@@ -1,0 +1,70 @@
+# Build directories
+build/
+build_wasm/
+dist/bgp_simulator_wasm.wasm
+dist/bgp_simulator_wasm.js
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# WASM intermediate files
+*.wasm
+*.wasm.map
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Node and npm
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+env/
+venv/
+
+# Emscripten
+.emscripten
+.emscripten_cache/
+
+# Large data files (keep only in local development)
+data/as-rel.txt
+data/as-rel.txt.bz2
+*.csv.bak
+
+# Test outputs
+test_data/output.csv
+test_data/ribs.csv
+
+# OS files
+Thumbs.db
+.DS_Store
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Cloudflare Pages build cache
+.wrangler/
