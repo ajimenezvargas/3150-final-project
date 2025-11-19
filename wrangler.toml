@@ -1,9 +1,0 @@
-name = "bgp-simulator"
-compatibility_date = "2024-11-19"
-
-# This is a Cloudflare Pages project
-# Build configuration is handled by Pages settings in the dashboard
-# No need for complex wrangler config for static site
-
-[env.production]
-name = "bgp-simulator-prod"
