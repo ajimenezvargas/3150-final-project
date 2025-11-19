@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Policy.h"
 #include "ROV.h"
 #include "Community.h"
