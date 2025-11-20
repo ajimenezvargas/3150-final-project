@@ -4,7 +4,6 @@ let announcements_data = '';
 let rov_data = '';
 let lastResults = null;
 
-
 // Initialize when WASM module loads
 Module.onRuntimeInitialized = async function() {
     console.log('WASM module initialized');
