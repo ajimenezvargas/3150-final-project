@@ -1,8 +1,6 @@
 # Build directories
 build/
 build_wasm/
-dist/bgp_simulator_wasm.wasm
-dist/bgp_simulator_wasm.js
 
 # Build artifacts
 *.o
@@ -12,8 +10,7 @@ dist/bgp_simulator_wasm.js
 *.dll
 *.exe
 
-# WASM intermediate files
-*.wasm
+# WASM intermediate files (but NOT the compiled output)
 *.wasm.map
 
 # IDE and editor files
