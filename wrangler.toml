@@ -1,17 +1,6 @@
 name = "bgp-simulator"
-main = "src/worker.js"     # or .ts, whatever you use
-
-[assets]
-binding   = "ASSETS"
-directory = "./dist"
-
 type = "javascript"
 compatibility_date = "2024-11-19"
 
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-
 # Cloudflare Pages configuration
-# Note: Build settings are configured in the Cloudflare Pages dashboard, not here
-# This file is minimal and primarily for metadata
+# Build settings are configured in the Cloudflare Pages dashboard, not here
