@@ -1,0 +1,7 @@
+name = "bgp-simulator"
+type = "javascript"
+compatibility_date = "2024-11-19"
+
+# Cloudflare Pages configuration
+# Note: Build settings are configured in the Cloudflare Pages dashboard, not here
+# This file is minimal and primarily for metadata
