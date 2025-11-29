@@ -6,6 +6,7 @@ echo "🔨 Building BGP Simulator for Cloudflare Pages..."
 # Create output directory
 mkdir -p dist
 
+
 # Check if WASM files exist in root
 if [ -f "bgp_simulator_wasm.wasm" ] && [ -f "bgp_simulator_wasm.js" ]; then
     echo "✅ WASM module found"
