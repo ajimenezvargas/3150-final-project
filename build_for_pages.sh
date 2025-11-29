@@ -15,12 +15,10 @@ if [ -f "bgp_simulator_wasm.wasm" ] && [ -f "bgp_simulator_wasm.js" ]; then
     cp bgp_simulator_wasm.wasm dist/
     cp bgp_simulator_wasm.js dist/
     cp index.html dist/
-    
-    # Copy any other assets (CSS, JS, etc.)
-    if [ -f "style.css" ]; then
-        cp style.css dist/
-    fi
-    
+    cp styles.css dist/
+    cp app.js dist/
+
+    # Copy any other assets if they exist
     if [ -d "assets" ]; then
         cp -r assets dist/
     fi
