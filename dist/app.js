@@ -156,6 +156,10 @@ async function runSimulation() {
     runButton.innerHTML = '<span class="spinner"></span>Running simulation...';
 
     try {
+        showStatus('Resetting simulator...', 'loading');
+        console.log('Resetting simulator...');
+        simulator.reset();
+
         showStatus('Loading CAIDA data...', 'loading');
 
         // Load data into simulator
@@ -311,14 +315,22 @@ function showStatus(message, type) {
 
 // Demo/Showcase functionality
 async function runShowcase() {
+    console.log('runShowcase called');
+    console.log('simulator:', simulator);
+    console.log('Module.BGPSimulator:', typeof Module.BGPSimulator);
+
     if (!simulator) {
-        showStatus('WASM simulator not initialized', 'error');
+        console.error('Simulator is null');
+        showStatus('WASM simulator not initialized yet. Please wait...', 'error');
         return;
     }
 
     // Get a random preset simulation
     const simulation = getRandomSimulation();
     const targetAsn = getRandomTargetAsn(simulation);
+
+    console.log('Selected simulation:', simulation.name);
+    console.log('Target ASN:', targetAsn);
 
     // Update demo info display
     document.getElementById('demo-name').textContent = simulation.name;
@@ -339,45 +351,58 @@ async function runShowcase() {
     showcaseButton.innerHTML = '<span class="spinner"></span>Running showcase...';
 
     try {
-        showStatus('Loading preset simulation...', 'loading');
+        showStatus('Resetting simulator...', 'loading');
+        console.log('Resetting simulator...');
+        simulator.reset();
 
-        // Load data into simulator
+        showStatus('Loading preset CAIDA data...', 'loading');
         console.log('Loading preset CAIDA data...');
+        console.log('CAIDA data length:', caida_data.length);
         const caidaLoaded = simulator.loadCAIDAData(caida_data);
+        console.log('CAIDA loaded result:', caidaLoaded);
         if (!caidaLoaded) {
-            throw new Error('Failed to load preset CAIDA data');
+            throw new Error('Failed to load CAIDA data');
         }
 
         showStatus('Loading preset announcements...', 'loading');
         console.log('Loading preset announcements...');
+        console.log('Announcements data length:', announcements_data.length);
         const announcementsLoaded = simulator.loadAnnouncements(announcements_data);
+        console.log('Announcements loaded result:', announcementsLoaded);
         if (!announcementsLoaded) {
-            throw new Error('Failed to load preset announcements');
+            throw new Error('Failed to load announcements');
         }
 
         // Load ROV data
         showStatus('Loading ROV configuration...', 'loading');
         console.log('Loading ROV ASNs...');
+        console.log('ROV data length:', rov_data.length);
         simulator.loadROVASNs(rov_data);
+        console.log('ROV ASNs loaded');
 
         // Run simulation
         showStatus('Running simulation...', 'loading');
         console.log('Running simulation...');
         const result = simulator.runSimulation();
+        console.log('Simulation result:', result);
         const resultObj = JSON.parse(result);
 
         if (resultObj.status !== 'success') {
-            throw new Error('Simulation failed: ' + resultObj.error);
+            throw new Error('Simulation failed: ' + (resultObj.error || 'unknown error'));
         }
+
+        console.log('Simulation stats:', resultObj);
 
         // Get routing info for target ASN
         showStatus('Retrieving routing information...', 'loading');
         console.log('Getting routing info for ASN', targetAsn);
         const routingInfo = simulator.getRoutingInfo(parseInt(targetAsn));
+        console.log('Routing info:', routingInfo);
         const routingObj = JSON.parse(routingInfo);
 
         // Store results for export
         lastResults = simulator.exportRoutingTables();
+        console.log('Exported routing tables');
 
         // Display results
         displayResults(resultObj, routingObj, parseInt(targetAsn));
@@ -388,6 +413,7 @@ async function runShowcase() {
 
     } catch (error) {
         console.error('Showcase error:', error);
+        console.error('Error stack:', error.stack);
         showStatus('Error: ' + error.message, 'error');
     } finally {
         showcaseButton.disabled = false;
