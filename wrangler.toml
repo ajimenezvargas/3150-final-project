@@ -1,2 +1,2 @@
-# Cloudflare Pages Configuration for BGP Simulator
+name = "bgp-simulator"
 pages_build_output_dir = "dist"
