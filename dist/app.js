@@ -4,22 +4,46 @@ let announcements_data = '';
 let rov_data = '';
 let lastResults = null;
 
+// Ensure Module is defined before setting callbacks
+if (typeof Module === 'undefined') {
+    window.Module = {};
+}
 
 // Initialize when WASM module loads
 Module.onRuntimeInitialized = async function() {
-    console.log('WASM module initialized');
+    console.log('WASM module initialized successfully');
     try {
+        if (typeof Module.BGPSimulator === 'undefined') {
+            throw new Error('BGPSimulator class not found. WASM bindings failed to load.');
+        }
         simulator = new Module.BGPSimulator();
+        console.log('Simulator instance created:', simulator);
         showStatus('WASM simulator loaded and ready!', 'success');
     } catch (error) {
-        showStatus('Error initializing simulator: ' + error.message, 'error');
+        console.error('Simulator initialization error:', error);
+        showStatus('Error: ' + error.message, 'error');
     }
 };
 
-// File input handlers
-document.getElementById('caida-file').addEventListener('change', handleCAIDAFile);
-document.getElementById('announcements-file').addEventListener('change', handleAnnouncementsFile);
-document.getElementById('rov-file').addEventListener('change', handleROVFile);
+// File input handlers - delay until DOM is ready
+function initFileHandlers() {
+    const caidaInput = document.getElementById('caida-file');
+    const annsInput = document.getElementById('announcements-file');
+    const rovInput = document.getElementById('rov-file');
+
+    if (caidaInput) caidaInput.addEventListener('change', handleCAIDAFile);
+    if (annsInput) annsInput.addEventListener('change', handleAnnouncementsFile);
+    if (rovInput) rovInput.addEventListener('change', handleROVFile);
+
+    console.log('File handlers initialized');
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFileHandlers);
+} else {
+    initFileHandlers();
+}
 
 function handleCAIDAFile(event) {
     const file = event.target.files[0];
@@ -371,7 +395,5 @@ async function runShowcase() {
     }
 }
 
-// Smooth scroll for results
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Page loaded, waiting for WASM module...');
-});
+// Log when page is ready
+console.log('app.js loaded');
