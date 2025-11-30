@@ -200,8 +200,8 @@
         #network-canvas {
             display: block;
             width: 100%;
-            height: 500px;
             background: white;
+            border: 1px solid #DDD;
         }
 
         .network-info {
@@ -536,10 +536,15 @@
             const canvas = document.getElementById('network-canvas');
             const ctx = canvas.getContext('2d');
 
-            // Set canvas size
-            const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 500;
+            // Set canvas size properly (must be set before any drawing)
+            const container = canvas.parentElement;
+            const width = container.offsetWidth;
+            const height = 500;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            console.log('Canvas size:', width, 'x', height);
 
             // Parse relationships to build graph
             const nodes = new Map();
@@ -555,8 +560,8 @@
                     if (!nodes.has(asn1)) {
                         nodes.set(asn1, {
                             id: asn1,
-                            x: Math.random() * canvas.width,
-                            y: Math.random() * canvas.height,
+                            x: Math.random() * width,
+                            y: Math.random() * height,
                             vx: 0,
                             vy: 0
                         });
@@ -564,8 +569,8 @@
                     if (!nodes.has(asn2)) {
                         nodes.set(asn2, {
                             id: asn2,
-                            x: Math.random() * canvas.width,
-                            y: Math.random() * canvas.height,
+                            x: Math.random() * width,
+                            y: Math.random() * height,
                             vx: 0,
                             vy: 0
                         });
@@ -578,6 +583,8 @@
                     });
                 }
             });
+
+            console.log('Nodes:', nodes.size, 'Edges:', edges.length);
 
             // If too many nodes, sample for visualization
             const maxNodesToShow = 100;
@@ -604,7 +611,7 @@
 
             // Simple force-directed layout
             const iterations = 30;
-            const k = Math.sqrt((canvas.width * canvas.height) / nodesToShow.length);
+            const k = Math.sqrt((width * height) / nodesToShow.length);
 
             for (let iter = 0; iter < iterations; iter++) {
                 // Repulsive forces
@@ -650,10 +657,16 @@
                     node.vy *= 0.95;
 
                     // Keep within bounds
-                    node.x = Math.max(20, Math.min(canvas.width - 20, node.x));
-                    node.y = Math.max(20, Math.min(canvas.height - 20, node.y));
+                    node.x = Math.max(20, Math.min(width - 20, node.x));
+                    node.y = Math.max(20, Math.min(height - 20, node.y));
                 });
             }
+
+            console.log('Drawing', nodesToShow.length, 'nodes and', edgesToShow.length, 'edges');
+
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, width, height);
 
             // Draw edges
             ctx.strokeStyle = '#CCC';
