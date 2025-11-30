@@ -6,29 +6,21 @@ echo "🔨 Building BGP Simulator for Cloudflare Pages..."
 # Create output directory
 mkdir -p dist
 
-# Check if WASM files exist in root
+# Copy index.html with embedded CSS and JavaScript (no external files needed)
+cp index.html dist/
+
+# Copy WASM files if they exist (for potential future use)
 if [ -f "bgp_simulator_wasm.wasm" ] && [ -f "bgp_simulator_wasm.js" ]; then
-    echo "✅ WASM module found"
-    
-    # Copy all necessary files to dist/
+    echo "✅ WASM module found (optional for future features)"
     cp bgp_simulator_wasm.wasm dist/
     cp bgp_simulator_wasm.js dist/
-    cp index.html dist/
-    cp styles.css dist/
-    cp app.js dist/
-
-    # Copy any other assets if they exist
-    if [ -d "assets" ]; then
-        cp -r assets dist/
-    fi
-    
-    echo "✅ Files copied to dist/"
-    ls -lh dist/
-    exit 0
-else
-    echo "❌ WASM files not found in root"
-    echo "Please build locally first:"
-    echo "  source /tmp/emsdk/emsdk_env.sh"
-    echo "  cd build_wasm && emcmake cmake .. && emmake make"
-    exit 1
 fi
+
+# Copy any other assets if they exist
+if [ -d "assets" ]; then
+    cp -r assets dist/
+fi
+
+echo "✅ Build complete! Files ready for Cloudflare Pages"
+ls -lh dist/
+exit 0
