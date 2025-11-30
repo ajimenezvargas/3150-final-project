@@ -39,7 +39,8 @@ if(EMSCRIPTEN)
         "SHELL:-lembind"
         "SHELL:-s WASM=1"
         "SHELL:-s ALLOW_MEMORY_GROWTH=1"
-        "SHELL:-s MAXIMUM_MEMORY=2GB"
+        "SHELL:-s INITIAL_MEMORY=256MB"
+        "SHELL:-s MAXIMUM_MEMORY=512MB"
     )
 
     # Output to dist directory

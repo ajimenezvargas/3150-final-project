@@ -25,10 +25,19 @@ function handleCAIDAFile(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    const size = (file.size / 1024 / 1024).toFixed(2);
+    const maxSize = 50; // 50MB limit for safety
+
+    // Validate file size
+    if (file.size > maxSize * 1024 * 1024) {
+        document.getElementById('caida-status').textContent = `Error: File too large (${size}MB, max ${maxSize}MB). Try a smaller dataset.`;
+        document.getElementById('caida-status').classList.add('error');
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = function(e) {
         caida_data = e.target.result;
-        const size = (file.size / 1024 / 1024).toFixed(2);
         document.getElementById('caida-status').textContent = `✓ Loaded (${size} MB)`;
         document.getElementById('caida-status').classList.remove('error');
     };
@@ -43,10 +52,19 @@ function handleAnnouncementsFile(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    const size = (file.size / 1024).toFixed(2);
+    const maxSize = 100 * 1024 * 1024; // 100MB limit for safety
+
+    // Validate file size
+    if (file.size > maxSize) {
+        document.getElementById('announcements-status').textContent = `Error: File too large (${size}KB, max ${(maxSize / 1024).toFixed(0)}KB)`;
+        document.getElementById('announcements-status').classList.add('error');
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = function(e) {
         announcements_data = e.target.result;
-        const size = (file.size / 1024).toFixed(2);
         document.getElementById('announcements-status').textContent = `✓ Loaded (${size} KB)`;
         document.getElementById('announcements-status').classList.remove('error');
     };
@@ -61,10 +79,19 @@ function handleROVFile(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    const size = (file.size / 1024).toFixed(2);
+    const maxSize = 10 * 1024 * 1024; // 10MB limit for safety
+
+    // Validate file size
+    if (file.size > maxSize) {
+        document.getElementById('rov-status').textContent = `Error: File too large (${size}KB, max ${(maxSize / 1024).toFixed(0)}KB)`;
+        document.getElementById('rov-status').classList.add('error');
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = function(e) {
         rov_data = e.target.result;
-        const size = (file.size / 1024).toFixed(2);
         document.getElementById('rov-status').textContent = `✓ Loaded (${size} KB)`;
         document.getElementById('rov-status').classList.remove('error');
     };
