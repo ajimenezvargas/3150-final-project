@@ -45,36 +45,64 @@
             padding-left: 15px;
         }
 
-        .demo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+        .file-upload-area {
+            border: 2px dashed #1AC8ED;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(26, 200, 237, 0.05);
             margin-bottom: 20px;
         }
 
-        .demo-card {
-            background: linear-gradient(135deg, rgba(26, 200, 237, 0.1) 0%, rgba(255, 107, 53, 0.1) 100%);
-            border: 2px solid #1AC8ED;
-            padding: 20px;
-            border-radius: 8px;
+        .file-upload-area:hover {
+            background: rgba(26, 200, 237, 0.1);
+            border-color: #FF6B35;
+        }
+
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: block;
             cursor: pointer;
-            transition: all 0.3s ease;
+            color: #004E89;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
 
-        .demo-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(26, 200, 237, 0.2);
-        }
-
-        .demo-card h3 {
-            color: #FF6B35;
-            font-size: 1.3em;
-            margin-bottom: 8px;
-        }
-
-        .demo-card p {
+        .file-info {
             color: #7F8C8D;
-            margin-bottom: 15px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            color: #004E89;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #E0E0E0;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: monospace;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #1AC8ED;
+            box-shadow: 0 0 0 3px rgba(26, 200, 237, 0.1);
         }
 
         button {
@@ -93,12 +121,46 @@
         button:hover { background: #e55a24; transform: translateY(-2px); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        .status-message {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #D4EDDA;
+            color: #155724;
+            border: 1px solid #C3E6CB;
+        }
+
+        .status-message.error {
+            background: #F8D7DA;
+            color: #721C24;
+            border: 1px solid #F5C6CB;
+        }
+
+        .status-message.info {
+            background: #D1ECF1;
+            color: #0C5460;
+            border: 1px solid #BEE5EB;
+        }
+
         .results {
             background: #F8F9FA;
             padding: 20px;
             border-radius: 8px;
             margin-top: 20px;
             border-left: 4px solid #2ECC71;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
         }
 
         .stat {
@@ -114,13 +176,17 @@
         .stat-value { font-size: 1.8em; font-weight: 700; }
         .stat-label { font-size: 0.9em; opacity: 0.9; }
 
-        .info-text {
-            background: #E8F4F8;
-            border-left: 4px solid #1AC8ED;
+        .data-preview {
+            background: #F8F9FA;
             padding: 15px;
-            border-radius: 4px;
-            margin: 15px 0;
-            color: #004E89;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            font-family: monospace;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            border-left: 4px solid #1AC8ED;
         }
 
         footer {
@@ -131,8 +197,6 @@
             color: #7F8C8D;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-
-        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -140,37 +204,62 @@
         <header>
             <h1>BGP Simulator</h1>
             <p>Autonomous System Routing Simulation</p>
-            <p class="subtitle">Powered by WebAssembly</p>
+            <p class="subtitle">Upload your network data to analyze</p>
         </header>
 
         <main>
             <section class="section">
-                <h2>Quick Demo - Select a Scenario</h2>
-                <p style="color: #7F8C8D; margin-bottom: 20px;">Choose a preset network topology to see how BGP routing works:</p>
+                <h2>Upload Network Data</h2>
 
-                <div class="demo-grid" id="demoGrid">
-                    <!-- Demo cards will be generated here -->
-                </div>
+                <div id="status-message" class="status-message"></div>
 
-                <div id="resultsSection" class="hidden">
-                    <div class="results">
-                        <h3 id="resultTitle" style="color: #004E89; margin-bottom: 15px;">Simulation Results</h3>
-
-                        <div id="statsContainer"></div>
-
-                        <div class="info-text">
-                            <strong>Simulation:</strong> <span id="simName"></span>
+                <form id="upload-form">
+                    <div class="form-group">
+                        <label class="form-label">CAIDA AS Relationships File</label>
+                        <div class="file-upload-area" id="caida-upload">
+                            <label class="file-upload-label">Click to select or drag and drop</label>
+                            <input type="file" id="caida-file" accept=".txt,.csv">
+                            <div class="file-info">Format: ASN1|ASN2|relationship (one per line)</div>
                         </div>
+                        <div id="caida-status" style="color: #7F8C8D; font-size: 0.9em;"></div>
+                    </div>
 
-                        <div class="info-text">
-                            <strong>Target ASN:</strong> <span id="targetASN"></span>
+                    <div class="form-group">
+                        <label class="form-label">BGP Announcements File</label>
+                        <div class="file-upload-area" id="announcements-upload">
+                            <label class="file-upload-label">Click to select or drag and drop</label>
+                            <input type="file" id="announcements-file" accept=".csv,.txt">
+                            <div class="file-info">Format: CSV with origin_asn,prefix,rov_invalid</div>
                         </div>
+                        <div id="announcements-status" style="color: #7F8C8D; font-size: 0.9em;"></div>
+                    </div>
 
-                        <h4 style="color: #004E89; margin-top: 20px; margin-bottom: 10px;">Network Topology</h4>
-                        <pre id="topologyInfo" style="background: #F8F9FA; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.9em;"></pre>
+                    <div class="form-group">
+                        <label class="form-label">ROV ASNs File (Optional)</label>
+                        <div class="file-upload-area" id="rov-upload">
+                            <label class="file-upload-label">Click to select or drag and drop</label>
+                            <input type="file" id="rov-file" accept=".txt,.csv">
+                            <div class="file-info">Format: One ASN per line</div>
+                        </div>
+                        <div id="rov-status" style="color: #7F8C8D; font-size: 0.9em;"></div>
+                    </div>
 
-                        <h4 style="color: #004E89; margin-top: 20px; margin-bottom: 10px;">Announcements</h4>
-                        <pre id="announcementsInfo" style="background: #F8F9FA; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.9em;"></pre>
+                    <button type="submit" id="analyze-button">Analyze Data</button>
+                </form>
+
+                <div id="results-section" class="results">
+                    <h3 style="color: #004E89; margin-bottom: 15px;">Data Analysis</h3>
+
+                    <div id="stats-container" style="margin-bottom: 20px;"></div>
+
+                    <div>
+                        <h4 style="color: #004E89; margin-top: 20px; margin-bottom: 10px;">AS Relationships Preview</h4>
+                        <div id="topology-preview" class="data-preview"></div>
+                    </div>
+
+                    <div>
+                        <h4 style="color: #004E89; margin-top: 20px; margin-bottom: 10px;">Announcements Preview</h4>
+                        <div id="announcements-preview" class="data-preview"></div>
                     </div>
                 </div>
             </section>
@@ -179,10 +268,10 @@
                 <h2>About BGP</h2>
                 <p style="line-height: 1.8; color: #555;">
                     The Border Gateway Protocol (BGP) is the routing protocol used on the internet to exchange routing information between autonomous systems (ASes).
-                    This simulator demonstrates how BGP routing works by showing how different network topologies and announcements affect route propagation.
+                    This simulator analyzes how different network topologies and announcements affect route propagation.
                 </p>
                 <p style="line-height: 1.8; color: #555; margin-top: 10px;">
-                    Select a demo scenario above to see an example of BGP routing in action.
+                    Upload your CAIDA AS relationships and BGP announcements files to analyze your network topology.
                 </p>
             </section>
         </main>
@@ -193,150 +282,191 @@
     </div>
 
     <script>
-        // Preset simulation data
-        const SIMULATIONS = [
-            {
-                name: "Tech Giants Network",
-                description: "Simulates BGP routing between major tech companies",
-                caida: `# AS Relationships (asn1|asn2|relationship: -1=customer, 0=peer, 1=provider)
-15169|174|0
-15169|3356|0
-15169|6453|0
-8452|15169|-1
-8452|174|0
-8452|3356|0
-1239|174|1
-1239|3356|0
-6939|174|0
-6939|3356|0
-701|174|-1
-701|3356|-1
-3320|174|1
-3320|3356|1
-13335|174|0
-13335|3356|0
-13335|15169|0
-6762|174|0
-6762|3356|0
-12389|15169|-1
-12389|174|0
-12389|3356|0`,
-                announcements: `origin_asn,prefix,rov_invalid
-15169,8.8.8.0/24,false
-15169,8.8.4.0/24,false
-13335,1.1.1.0/24,false
-13335,1.0.0.0/24,false
-174,38.0.0.0/8,false
-3356,67.0.0.0/8,false
-701,206.0.0.0/8,false`,
-                targetAsns: [174, 3356, 701]
-            },
-            {
-                name: "Academic Network",
-                description: "Simulates BGP routing across university networks",
-                caida: `# AS Relationships (asn1|asn2|relationship: -1=customer, 0=peer, 1=provider)
-1|2|1
-2|3|0
-2|4|0
-3|4|0
-5|2|-1
-5|4|-1
-6|1|-1
-6|3|0
-7|4|-1
-8|2|-1
-9|3|-1`,
-                announcements: `origin_asn,prefix,rov_invalid
-1,192.168.1.0/24,false
-2,192.168.2.0/24,false
-3,192.168.3.0/24,false
-4,192.168.4.0/24,false
-5,192.168.5.0/24,false
-6,192.168.6.0/24,false`,
-                targetAsns: [2, 4, 5]
-            },
-            {
-                name: "Regional ISP Network",
-                description: "Simulates routing in a regional internet service provider",
-                caida: `# AS Relationships (asn1|asn2|relationship: -1=customer, 0=peer, 1=provider)
-64500|64501|-1
-64500|64502|-1
-64501|64502|0
-64502|64503|1
-64502|64504|1
-64505|64501|-1
-64505|64502|0
-64506|64500|-1
-64506|64501|0`,
-                announcements: `origin_asn,prefix,rov_invalid
-64500,10.0.0.0/8,false
-64501,172.16.0.0/12,false
-64502,192.0.2.0/24,false
-64503,198.51.100.0/24,false
-64504,203.0.113.0/24,false`,
-                targetAsns: [64501, 64502]
+        let caidaData = '';
+        let announcementsData = '';
+        let rovData = '';
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message show ' + type;
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.classList.remove('show');
+                }, 5000);
             }
-        ];
-
-        // Initialize demo cards
-        function initializeDemo() {
-            const grid = document.getElementById('demoGrid');
-
-            SIMULATIONS.forEach((sim, index) => {
-                const card = document.createElement('div');
-                card.className = 'demo-card';
-                card.innerHTML = `
-                    <h3>${sim.name}</h3>
-                    <p>${sim.description}</p>
-                    <button onclick="showSimulation(${index})">View Simulation</button>
-                `;
-                grid.appendChild(card);
-            });
         }
 
-        function showSimulation(index) {
-            const sim = SIMULATIONS[index];
-            const targetAsn = sim.targetAsns[Math.floor(Math.random() * sim.targetAsns.length)];
+        function setupFileUpload(uploadAreaId, inputId, statusId) {
+            const uploadArea = document.getElementById(uploadAreaId);
+            const input = document.getElementById(inputId);
+            const status = document.getElementById(statusId);
 
-            // Count stats
-            const ases = new Set();
-            const lines = sim.caida.split('\n').filter(l => l && !l.startsWith('#'));
-            lines.forEach(line => {
-                const parts = line.split('|');
-                if (parts.length >= 2) {
-                    ases.add(parts[0]);
-                    ases.add(parts[1]);
+            uploadArea.addEventListener('click', () => input.click());
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#FF6B35';
+                uploadArea.style.background = 'rgba(255, 107, 53, 0.05)';
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = '#1AC8ED';
+                uploadArea.style.background = 'rgba(26, 200, 237, 0.05)';
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#1AC8ED';
+                uploadArea.style.background = 'rgba(26, 200, 237, 0.05)';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    handleFileSelect(input, statusId, uploadAreaId);
                 }
             });
 
-            // Display results
-            document.getElementById('simName').textContent = sim.name;
-            document.getElementById('targetASN').textContent = targetAsn;
-
-            // Stats
-            const statsHtml = `
-                <div class="stat">
-                    <div class="stat-value">${ases.size}</div>
-                    <div class="stat-label">Autonomous Systems</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">${lines.length}</div>
-                    <div class="stat-label">Relationships</div>
-                </div>
-            `;
-            document.getElementById('statsContainer').innerHTML = statsHtml;
-
-            // Topology and announcements
-            document.getElementById('topologyInfo').textContent = sim.caida;
-            document.getElementById('announcementsInfo').textContent = sim.announcements;
-
-            // Show results
-            document.getElementById('resultsSection').classList.remove('hidden');
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            input.addEventListener('change', () => {
+                handleFileSelect(input, statusId, uploadAreaId);
+            });
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', initializeDemo);
+        function handleFileSelect(input, statusId, uploadAreaId) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const status = document.getElementById(statusId);
+            const uploadArea = document.getElementById(uploadAreaId);
+            const size = (file.size / 1024).toFixed(2);
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+
+                if (uploadAreaId === 'caida-upload') {
+                    caidaData = content;
+                    status.textContent = `✓ Loaded (${size} KB)`;
+                } else if (uploadAreaId === 'announcements-upload') {
+                    announcementsData = content;
+                    status.textContent = `✓ Loaded (${size} KB)`;
+                } else if (uploadAreaId === 'rov-upload') {
+                    rovData = content;
+                    status.textContent = `✓ Loaded (${size} KB)`;
+                }
+
+                status.style.color = '#28A745';
+                uploadArea.style.borderColor = '#1AC8ED';
+                uploadArea.style.background = 'rgba(26, 200, 237, 0.05)';
+            };
+
+            reader.onerror = () => {
+                status.textContent = 'Error reading file';
+                status.style.color = '#DC3545';
+            };
+
+            reader.readAsText(file);
+        }
+
+        document.getElementById('upload-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (!caidaData) {
+                showStatus('Please upload CAIDA AS relationships file', 'error');
+                return;
+            }
+
+            if (!announcementsData) {
+                showStatus('Please upload announcements CSV file', 'error');
+                return;
+            }
+
+            analyzeData();
+        });
+
+        function analyzeData() {
+            try {
+                // Parse CAIDA data
+                const caidaLines = caidaData.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+                const ases = new Set();
+                const relationships = [];
+
+                caidaLines.forEach(line => {
+                    const parts = line.split('|');
+                    if (parts.length >= 3) {
+                        ases.add(parts[0].trim());
+                        ases.add(parts[1].trim());
+                        relationships.push(line.trim());
+                    }
+                });
+
+                // Parse announcements data
+                const annLines = announcementsData.split('\n').filter(l => l.trim());
+                const announcements = [];
+                let isHeader = true;
+
+                annLines.forEach(line => {
+                    if (isHeader && (line.includes('origin') || line.includes('asn'))) {
+                        isHeader = false;
+                        return;
+                    }
+                    if (line.trim()) {
+                        announcements.push(line.trim());
+                    }
+                });
+
+                // Count origin ASNs
+                const originAsns = new Set();
+                announcements.forEach(line => {
+                    const parts = line.split(',');
+                    if (parts.length >= 1) {
+                        originAsns.add(parts[0].trim());
+                    }
+                });
+
+                // Display stats
+                const statsHtml = `
+                    <div class="stat">
+                        <div class="stat-value">${ases.size}</div>
+                        <div class="stat-label">Autonomous Systems</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${relationships.length}</div>
+                        <div class="stat-label">Relationships</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${announcements.length}</div>
+                        <div class="stat-label">Announcements</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${originAsns.size}</div>
+                        <div class="stat-label">Origin ASNs</div>
+                    </div>
+                `;
+                document.getElementById('stats-container').innerHTML = statsHtml;
+
+                // Show data previews
+                const topologyPreview = document.getElementById('topology-preview');
+                topologyPreview.textContent = relationships.slice(0, 10).join('\n') +
+                    (relationships.length > 10 ? `\n... and ${relationships.length - 10} more relationships` : '');
+
+                const announcementsPreview = document.getElementById('announcements-preview');
+                announcementsPreview.textContent = announcements.slice(0, 10).join('\n') +
+                    (announcements.length > 10 ? `\n... and ${announcements.length - 10} more announcements` : '');
+
+                document.getElementById('results-section').classList.add('show');
+                showStatus('Data analyzed successfully!', 'success');
+                document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                showStatus('Error analyzing data: ' + error.message, 'error');
+            }
+        }
+
+        // Setup file uploads
+        setupFileUpload('caida-upload', 'caida-file', 'caida-status');
+        setupFileUpload('announcements-upload', 'announcements-file', 'announcements-status');
+        setupFileUpload('rov-upload', 'rov-file', 'rov-status');
     </script>
 </body>
 </html>
