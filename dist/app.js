@@ -4,23 +4,54 @@ let announcements_data = '';
 let rov_data = '';
 let lastResults = null;
 
-// Ensure Module is defined before setting callbacks
-if (typeof Module === 'undefined') {
-    window.Module = {};
+// Define status function early so it's available during init
+function showStatus(message, type) {
+    console.log('showStatus:', type, message);
+    const statusDiv = document.getElementById('status-message');
+    if (!statusDiv) {
+        console.warn('status-message element not found');
+        return;
+    }
+    statusDiv.textContent = message;
+    statusDiv.className = 'status-message show ' + type;
+
+    // Auto-hide after 5 seconds for success messages
+    if (type === 'success') {
+        setTimeout(() => {
+            statusDiv.classList.remove('show');
+        }, 5000);
+    }
 }
 
+console.log('app.js: Starting initialization');
+
+// Setup Module object - it will be populated by bgp_simulator_wasm.js
+window.Module = window.Module || {};
+
+// Store the original onRuntimeInitialized if it exists
+const originalOnRuntimeInitialized = window.Module.onRuntimeInitialized;
+
 // Initialize when WASM module loads
-Module.onRuntimeInitialized = async function() {
-    console.log('WASM module initialized successfully');
+window.Module.onRuntimeInitialized = function() {
+    console.log('app.js: onRuntimeInitialized called');
+    console.log('app.js: Module type:', typeof Module);
+    console.log('app.js: Module.BGPSimulator type:', typeof Module.BGPSimulator);
+
+    // Call original handler if it existed
+    if (originalOnRuntimeInitialized) {
+        originalOnRuntimeInitialized();
+    }
+
     try {
         if (typeof Module.BGPSimulator === 'undefined') {
             throw new Error('BGPSimulator class not found. WASM bindings failed to load.');
         }
         simulator = new Module.BGPSimulator();
-        console.log('Simulator instance created:', simulator);
+        console.log('app.js: Simulator instance created successfully');
         showStatus('WASM simulator loaded and ready!', 'success');
     } catch (error) {
-        console.error('Simulator initialization error:', error);
+        console.error('app.js: Simulator initialization error:', error);
+        console.error('app.js: Error stack:', error.stack);
         showStatus('Error: ' + error.message, 'error');
     }
 };
@@ -35,7 +66,7 @@ function initFileHandlers() {
     if (annsInput) annsInput.addEventListener('change', handleAnnouncementsFile);
     if (rovInput) rovInput.addEventListener('change', handleROVFile);
 
-    console.log('File handlers initialized');
+    console.log('app.js: File handlers initialized');
 }
 
 // Initialize when DOM is ready
@@ -44,6 +75,8 @@ if (document.readyState === 'loading') {
 } else {
     initFileHandlers();
 }
+
+console.log('app.js: Initialization setup complete');
 
 function handleCAIDAFile(event) {
     const file = event.target.files[0];
@@ -298,19 +331,6 @@ function resetSimulation() {
     document.getElementById('results-section').style.display = 'none';
 
     showStatus('Simulation reset', 'info');
-}
-
-function showStatus(message, type) {
-    const statusDiv = document.getElementById('status-message');
-    statusDiv.textContent = message;
-    statusDiv.className = 'status-message show ' + type;
-
-    // Auto-hide after 5 seconds for success messages
-    if (type === 'success') {
-        setTimeout(() => {
-            statusDiv.classList.remove('show');
-        }, 5000);
-    }
 }
 
 // Demo/Showcase functionality
