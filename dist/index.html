@@ -17,6 +17,21 @@
         </header>
 
         <main class="main-content">
+            <!-- Demo Showcase Section -->
+            <section class="section demo-section">
+                <h2>Quick Demo</h2>
+                <p class="demo-description">New to BGP simulation? Try a preset scenario:</p>
+                <div class="demo-container">
+                    <div class="demo-info" id="demo-info">
+                        <h3 id="demo-name">Tech Giants Network</h3>
+                        <p id="demo-description">Simulates BGP routing between major tech companies</p>
+                    </div>
+                    <button id="showcase-button" class="btn btn-primary" onclick="runShowcase()">
+                        Run Random Simulation
+                    </button>
+                </div>
+            </section>
+
             <!-- Input Section -->
             <section class="section">
                 <h2>1. Upload Data Files</h2>
@@ -153,6 +168,7 @@
     </div>
 
     <script src="bgp_simulator_wasm.js"></script>
+    <script src="preset-data.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

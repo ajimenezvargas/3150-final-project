@@ -470,3 +470,44 @@ body {
     animation: spin 1s linear infinite;
     margin-right: 10px;
 }
+
+/* Demo Section */
+.demo-section {
+    background: linear-gradient(135deg, rgba(26, 200, 237, 0.1) 0%, rgba(255, 107, 53, 0.1) 100%);
+    border: 2px solid var(--accent-color);
+}
+
+.demo-description {
+    color: var(--text-light);
+    font-size: 1.05em;
+    margin-bottom: 20px;
+}
+
+.demo-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.demo-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.demo-info h3 {
+    color: var(--primary-color);
+    font-size: 1.4em;
+    margin-bottom: 8px;
+}
+
+.demo-info p {
+    color: var(--text-light);
+    font-size: 1em;
+}
+
+#showcase-button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}

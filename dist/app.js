@@ -285,6 +285,92 @@ function showStatus(message, type) {
     }
 }
 
+// Demo/Showcase functionality
+async function runShowcase() {
+    if (!simulator) {
+        showStatus('WASM simulator not initialized', 'error');
+        return;
+    }
+
+    // Get a random preset simulation
+    const simulation = getRandomSimulation();
+    const targetAsn = getRandomTargetAsn(simulation);
+
+    // Update demo info display
+    document.getElementById('demo-name').textContent = simulation.name;
+    document.getElementById('demo-description').textContent = simulation.description;
+
+    // Set the data
+    caida_data = simulation.caida;
+    announcements_data = simulation.announcements;
+    rov_data = simulation.rov;
+
+    // Set target ASN
+    document.getElementById('target-asn').value = targetAsn;
+
+    // Disable showcase button during simulation
+    const showcaseButton = document.getElementById('showcase-button');
+    const originalText = showcaseButton.textContent;
+    showcaseButton.disabled = true;
+    showcaseButton.innerHTML = '<span class="spinner"></span>Running showcase...';
+
+    try {
+        showStatus('Loading preset simulation...', 'loading');
+
+        // Load data into simulator
+        console.log('Loading preset CAIDA data...');
+        const caidaLoaded = simulator.loadCAIDAData(caida_data);
+        if (!caidaLoaded) {
+            throw new Error('Failed to load preset CAIDA data');
+        }
+
+        showStatus('Loading preset announcements...', 'loading');
+        console.log('Loading preset announcements...');
+        const announcementsLoaded = simulator.loadAnnouncements(announcements_data);
+        if (!announcementsLoaded) {
+            throw new Error('Failed to load preset announcements');
+        }
+
+        // Load ROV data
+        showStatus('Loading ROV configuration...', 'loading');
+        console.log('Loading ROV ASNs...');
+        simulator.loadROVASNs(rov_data);
+
+        // Run simulation
+        showStatus('Running simulation...', 'loading');
+        console.log('Running simulation...');
+        const result = simulator.runSimulation();
+        const resultObj = JSON.parse(result);
+
+        if (resultObj.status !== 'success') {
+            throw new Error('Simulation failed: ' + resultObj.error);
+        }
+
+        // Get routing info for target ASN
+        showStatus('Retrieving routing information...', 'loading');
+        console.log('Getting routing info for ASN', targetAsn);
+        const routingInfo = simulator.getRoutingInfo(parseInt(targetAsn));
+        const routingObj = JSON.parse(routingInfo);
+
+        // Store results for export
+        lastResults = simulator.exportRoutingTables();
+
+        // Display results
+        displayResults(resultObj, routingObj, parseInt(targetAsn));
+        showStatus('Showcase simulation completed successfully!', 'success');
+
+        // Scroll to results
+        document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+
+    } catch (error) {
+        console.error('Showcase error:', error);
+        showStatus('Error: ' + error.message, 'error');
+    } finally {
+        showcaseButton.disabled = false;
+        showcaseButton.textContent = originalText;
+    }
+}
+
 // Smooth scroll for results
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Page loaded, waiting for WASM module...');
