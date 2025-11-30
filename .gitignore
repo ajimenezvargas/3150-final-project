@@ -65,3 +65,4 @@ Thumbs.db
 
 # Cloudflare Pages build cache
 .wrangler/
+bench/
