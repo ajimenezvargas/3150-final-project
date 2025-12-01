@@ -54,6 +54,38 @@ python3 -m http.server 8000
 4. **Open in browser**:
 Visit `http://localhost:8000`
 
+### Building Native CLI Simulator
+
+For local testing and benchmarking, you can build the native command-line simulator:
+
+1. **Build the native simulator**:
+```bash
+make
+```
+
+This compiles both `bgp_sim` (test suite) and `bgp_simulator` (CLI tool).
+
+2. **Run the simulator**:
+```bash
+./bgp_simulator --relationships <relationships_file> \
+  --announcements <announcements_file> \
+  --rov-asns <rov_asns_file>
+```
+
+Example:
+```bash
+./bgp_simulator --relationships bench/many/CAIDAASGraphCollector_2025.10.16.txt \
+  --announcements bench/many/anns.csv \
+  --rov-asns bench/many/rov_asns.csv
+```
+
+The simulator outputs routing tables to `ribs.csv` in the current directory.
+
+3. **Clean build**:
+```bash
+make clean
+```
+
 ## Usage
 
 ### 1. Upload Data Files
