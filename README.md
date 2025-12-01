@@ -172,10 +172,37 @@ C++ Sources
 
 ## Performance
 
-- **Topology Size**: Tested with 78,000+ ASes
-- **Load Time**: < 2 seconds for full CAIDA dataset
-- **Simulation Time**: < 1 second for 10,000 announcements
-- **Memory**: Efficient WASM memory usage with growth support
+- **Topology Size**: Tested with 78,370 ASes from CAIDA dataset
+- **Load Time**: ~0.5 seconds to parse CAIDA relationships
+- **Simulation Time**: Varies based on announcement count:
+  - 2 announcements: ~0.8 seconds (78K routes)
+  - 2 announcements (subprefix): ~1.1 seconds (156K routes)
+  - 40 announcements: ~15.3 seconds (2.96M routes)
+- **Memory**: Efficient memory usage with automatic growth
+
+### Benchmark Tests
+
+Run the included bench tests to verify performance on your system:
+
+```bash
+# Build the simulator
+make
+
+# Run bench tests
+./bgp_simulator --relationships bench/many/CAIDAASGraphCollector_2025.10.16.txt \
+  --announcements bench/many/anns.csv --rov-asns bench/many/rov_asns.csv
+
+./bgp_simulator --relationships bench/prefix/CAIDAASGraphCollector_2025.10.16.txt \
+  --announcements bench/prefix/anns.csv --rov-asns bench/prefix/rov_asns.csv
+
+./bgp_simulator --relationships bench/subprefix/CAIDAASGraphCollector_2025.10.16.txt \
+  --announcements bench/subprefix/anns.csv --rov-asns bench/subprefix/rov_asns.csv
+```
+
+Expected timing on modern hardware (Apple Silicon M1/M2):
+- **many** test (40 announcements): ~15 seconds
+- **prefix** test (2 announcements): ~0.8 seconds
+- **subprefix** test (2 announcements, more routes): ~1.1 seconds
 
 ## File Structure
 
