@@ -2,7 +2,7 @@
 
 #include "AS.h"
 #include "ROV.h"
-#include <unordered_map>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,7 +22,7 @@ public:
     // Graph access
     AS* getAS(uint32_t asn) const;
     size_t size() const { return ases_.size(); }
-    const std::unordered_map<uint32_t, std::unique_ptr<AS>>& getAllASes() const { return ases_; }
+    const std::map<uint32_t, std::unique_ptr<AS>>& getAllASes() const { return ases_; }
     
     // Validation
     bool hasCycle() const;
@@ -35,7 +35,7 @@ public:
     bool isROVEnabled() const { return rov_enabled_; }
     
 private:
-    std::unordered_map<uint32_t, std::unique_ptr<AS>> ases_;
+    std::map<uint32_t, std::unique_ptr<AS>> ases_;
     ROVValidator rov_validator_;
     bool rov_enabled_;
     

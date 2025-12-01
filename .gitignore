@@ -9,6 +9,9 @@ build_wasm/
 *.dylib
 *.dll
 *.exe
+bgp_sim
+bgp_simulator
+simulator
 
 # WASM intermediate files (but NOT the compiled output)
 *.wasm.map
@@ -51,6 +54,7 @@ data/as-rel.txt.bz2
 # Test outputs
 test_data/output.csv
 test_data/ribs.csv
+ribs.csv
 
 # OS files
 Thumbs.db

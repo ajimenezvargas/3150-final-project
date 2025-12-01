@@ -136,9 +136,18 @@ bool AS::isBetterPath(const Announcement& new_ann, const Announcement& old_ann) 
     if (new_ann.getPathLength() > old_ann.getPathLength()) {
         return false;
     }
-    
+
     // 3. Tie-break by origin ASN (lower is better for stability)
-    return new_ann.getOrigin() < old_ann.getOrigin();
+    if (new_ann.getOrigin() < old_ann.getOrigin()) {
+        return true;
+    }
+    if (new_ann.getOrigin() > old_ann.getOrigin()) {
+        return false;
+    }
+
+    // 4. Final tie-break: keep existing path (first-come, first-served)
+    // This ensures deterministic behavior with the map-based iteration
+    return false;
 }
 
 void AS::propagateToNeighbors(const Announcement& ann) {

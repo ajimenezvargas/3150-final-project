@@ -86,8 +86,12 @@ std::string CSVOutput::formatASPath(const std::vector<uint32_t>& path) {
     std::ostringstream oss;
     oss << "(";
     for (size_t i = 0; i < path.size(); i++) {
-        if (i > 0) oss << ", ";
         oss << path[i];
+        if (i < path.size() - 1) {
+            oss << ", ";
+        } else if (path.size() == 1) {
+            oss << ",";  // Trailing comma for single-element paths
+        }
     }
     oss << ")";
     return oss.str();
