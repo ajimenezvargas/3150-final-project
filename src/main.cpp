@@ -7,7 +7,7 @@
 #include "Aggregation.h"
 #include "Statistics.h"
 #include "CSVOutput.h"
-#include "utils/downloader.h"
+#include "utils/Downloader.h"
 #include "utils/parser.h"
 #include <iostream>
 #include <filesystem>

@@ -48,9 +48,6 @@ bool IPPrefix::canAggregate(const IPPrefix& other) const {
     uint32_t ip1 = ipToInt(base_ip);
     uint32_t ip2 = ipToInt(other.base_ip);
     
-    // Create mask for this prefix length
-    uint32_t mask = 0xFFFFFFFF << (32 - prefix_length);
-    
     // Get parent network (one bit less specific)
     uint32_t parent_mask = 0xFFFFFFFF << (32 - prefix_length + 1);
     
@@ -64,7 +61,7 @@ bool IPPrefix::canAggregate(const IPPrefix& other) const {
     return (ip1 ^ ip2) == diff_bit;
 }
 
-IPPrefix IPPrefix::aggregate(const IPPrefix& p1, const IPPrefix& p2) {
+IPPrefix IPPrefix::aggregate(const IPPrefix& p1, const IPPrefix& /*p2*/) {
     // Aggregate into parent prefix (one bit less specific)
     uint32_t ip1 = ipToInt(p1.base_ip);
     uint32_t parent_mask = 0xFFFFFFFF << (32 - p1.prefix_length + 1);
