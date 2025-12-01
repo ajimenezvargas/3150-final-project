@@ -15,13 +15,13 @@ void printUsage(const char* program_name) {
     std::cout << "BGP Simulator - Cloudflare Network Optimization Tool\n";
     std::cout << "Usage: " << program_name << " [options]\n";
     std::cout << "\nOptions:\n";
-    std::cout << "  --caida <path>           Path to CAIDA AS relationships file\n";
+    std::cout << "  --relationships <path>   Path to CAIDA AS relationships file\n";
     std::cout << "  --announcements <path>   Path to announcements CSV file\n";
     std::cout << "  --rov-asns <path>        Path to ROV ASNs CSV file\n";
     std::cout << "  --output <path>          Path to output CSV file (default: ribs.csv)\n";
     std::cout << "  --help                   Show this help message\n";
     std::cout << "\nExample:\n";
-    std::cout << "  " << program_name << " --caida relationships.txt \\\n";
+    std::cout << "  " << program_name << " --relationships relationships.txt \\\n";
     std::cout << "    --announcements announcements.csv \\\n";
     std::cout << "    --rov-asns rov_asns.csv \\\n";
     std::cout << "    --output ribs.csv\n";
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
         if (arg == "--help" || arg == "-h") {
             printUsage(argv[0]);
             return 0;
-        } else if (arg == "--caida" && i + 1 < argc) {
+        } else if (arg == "--relationships" && i + 1 < argc) {
             caida_file = argv[++i];
         } else if (arg == "--announcements" && i + 1 < argc) {
             announcements_file = argv[++i];
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     
     // Validate required arguments
     if (caida_file.empty()) {
-        std::cerr << "Error: --caida is required\n";
+        std::cerr << "Error: --relationships is required\n";
         printUsage(argv[0]);
         return 1;
     }

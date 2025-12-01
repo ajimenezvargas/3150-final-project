@@ -199,7 +199,7 @@ No additional setup needed!
 
 Open your browser and go to:
 - `https://bgp-simulator.pages.dev` (automatic URL)
-- OR `https://yourdomain.com` (after custom domain setup)
+- OR `https://bgpsimaliciajim.com` (after custom domain setup)
 
 ### 5.2 Verify WASM Module
 
@@ -342,7 +342,7 @@ git push origin main
 ## Next Steps
 
 1. ✅ Deploy to Cloudflare Pages
-2. Share the URL: `https://yourdomain.com`
+2. Share the URL: `https://bgpsimaliciajim.com`
 3. Test with sample CAIDA data
 4. Collect feedback from users
 5. Monitor performance and errors

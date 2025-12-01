@@ -14,7 +14,7 @@ A powerful, browser-based BGP (Border Gateway Protocol) simulator that runs enti
 
 ## Live Demo
 
-Visit the live simulator at: [bgp-simulator.example.com](https://bgp-simulator.example.com)
+Visit the live simulator at: [bgpsimaliciajim.com](https://bgpsimaliciajim.com)
 
 ## Installation & Development
 
@@ -281,9 +281,9 @@ If you use this simulator in research, please cite:
 ```
 @software{bgp_simulator_2024,
   title={BGP Simulator - Cloudflare Edition},
-  author={Your Name},
+  author={Alicia Jimenez},
   year={2024},
-  url={https://github.com/yourusername/bgp-simulator}
+  url={https://bgpsimaliciajim.com}
 }
 ```
 
@@ -298,4 +298,4 @@ If you use this simulator in research, please cite:
 
 **Version**: 1.0
 **Last Updated**: November 2024
-**Maintainer**: Your Name
+**Maintainer**: Alicia Jimenez

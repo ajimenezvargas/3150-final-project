@@ -88,7 +88,7 @@ git push -u origin main
 3. Follow Cloudflare's wizard
 4. Your site is live with free HTTPS! 🎉
 
-**Your site will be live at**: `https://bgp-simulator.pages.dev`
+**Your site will be live at**: `https://bgp-simulator.pages.dev` or `https://bgpsimaliciajim.com`
 
 ## 🎯 Key Features
 
@@ -293,7 +293,7 @@ Your BGP Simulator is **production-ready** and can be deployed immediately.
 
 3. **Get Your URL**
    - `https://bgp-simulator.pages.dev` (auto)
-   - OR `https://yourdomain.com` (custom, optional)
+   - OR `https://bgpsimaliciajim.com` (custom, optional)
 
 4. **Share!**
    - Send the link to professors, colleagues, or the internet

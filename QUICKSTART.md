@@ -49,7 +49,7 @@ git push origin main
 ### 3. Get Your URL
 
 - Auto: `https://bgp-simulator.pages.dev`
-- Custom: Add your domain in Pages → Custom Domains
+- Custom: `https://bgpsimaliciajim.com` (add in Pages → Custom Domains)
 
 ## Using the Simulator
 
