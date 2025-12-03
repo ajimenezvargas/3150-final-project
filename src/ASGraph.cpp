@@ -1,4 +1,5 @@
 #include "ASGraph.h"
+#include <algorithm>
 #include <iostream>
 
 AS* ASGraph::getOrCreateAS(uint32_t asn) {
@@ -37,23 +38,42 @@ AS* ASGraph::getAS(uint32_t asn) const {
 
 bool ASGraph::hasCycleDFS(const AS* node,
                           std::unordered_map<uint32_t, int>& visited,
-                          std::vector<uint32_t>& path) const {
+                          std::vector<uint32_t>& path,
+                          std::vector<uint32_t>* cycle) const {
     uint32_t asn = node->getASN();
-    
-    // 0 = unvisited, 1 = in current path, 2 = fully explored
+
     if (visited[asn] == 1) {
-        return true; // Cycle found
+        if (cycle) {
+            auto it = std::find(path.begin(), path.end(), asn);
+            if (it != path.end()) {
+                cycle->assign(it, path.end());
+                cycle->push_back(asn);
+            }
+        }
+        return true;
     }
     if (visited[asn] == 2) {
-        return false; // Already checked
+        return false;
     }
-    
+
     visited[asn] = 1;
     path.push_back(asn);
     
-    // Check all providers (following customer-to-provider edges)
     for (const AS* provider : node->getProviders()) {
-        if (hasCycleDFS(provider, visited, path)) {
+        uint32_t provider_asn = provider->getASN();
+
+        if (visited[provider_asn] == 0) {
+            if (hasCycleDFS(provider, visited, path, cycle)) {
+                return true;
+            }
+        } else if (visited[provider_asn] == 1) {
+            if (cycle) {
+                auto it = std::find(path.begin(), path.end(), provider_asn);
+                if (it != path.end()) {
+                    cycle->assign(it, path.end());
+                    cycle->push_back(provider_asn);
+                }
+            }
             return true;
         }
     }
@@ -69,7 +89,7 @@ bool ASGraph::hasCycle() const {
     
     for (const auto& [asn, as_ptr] : ases_) {
         if (visited[asn] == 0) {
-            if (hasCycleDFS(as_ptr.get(), visited, path)) {
+            if (hasCycleDFS(as_ptr.get(), visited, path, nullptr)) {
                 return true;
             }
         }
@@ -81,10 +101,14 @@ bool ASGraph::hasCycle() const {
 std::vector<uint32_t> ASGraph::findCycle() const {
     std::unordered_map<uint32_t, int> visited;
     std::vector<uint32_t> path;
+    std::vector<uint32_t> cycle;
 
     for (const auto& [asn, as_ptr] : ases_) {
         if (visited[asn] == 0) {
-            if (hasCycleDFS(as_ptr.get(), visited, path)) {
+            if (hasCycleDFS(as_ptr.get(), visited, path, &cycle)) {
+                if (!cycle.empty()) {
+                    return cycle;
+                }
                 return path;
             }
         }

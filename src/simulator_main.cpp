@@ -85,6 +85,22 @@ int main(int argc, char* argv[]) {
     
     std::cout << "  Loaded " << graph.getAllASes().size() << " ASes\n";
 
+    if (graph.hasCycle()) {
+        std::cerr << "Error: Cycle detected in CAIDA relationships (provider/customer loop)\n";
+        auto cycle = graph.findCycle();
+        if (!cycle.empty()) {
+            std::cerr << "  Cycle path: ";
+            for (size_t i = 0; i < cycle.size(); ++i) {
+                std::cerr << cycle[i];
+                if (i + 1 < cycle.size()) {
+                    std::cerr << " -> ";
+                }
+            }
+            std::cerr << "\n";
+        }
+        return 2;
+    }
+
     // Compute propagation ranks for hierarchical propagation
     graph.computePropagationRanks();
     std::cout << "  Computed " << graph.getPropagationRanks().size() << " propagation ranks\n";

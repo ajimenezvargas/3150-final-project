@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 /**
@@ -49,7 +50,8 @@ private:
     // Cycle detection helper
     bool hasCycleDFS(const AS* node,
                      std::unordered_map<uint32_t, int>& visited,
-                     std::vector<uint32_t>& path) const;
+                     std::vector<uint32_t>& path,
+                     std::vector<uint32_t>* cycle) const;
 
     // Propagation rank helpers
     void assignRanksHelper(AS* as_obj, int rank);
