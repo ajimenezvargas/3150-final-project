@@ -84,23 +84,31 @@ int main(int argc, char* argv[]) {
     }
     
     std::cout << "  Loaded " << graph.getAllASes().size() << " ASes\n";
+
+    // Compute propagation ranks for hierarchical propagation
+    graph.computePropagationRanks();
+    std::cout << "  Computed " << graph.getPropagationRanks().size() << " propagation ranks\n";
     std::cout << "  ✓ AS Graph constructed\n\n";
     
     // Step 2: Load ROV ASNs (optional)
     std::cout << "[2/5] Loading ROV ASNs...\n";
     std::unordered_set<uint32_t> rov_asns_set;
-    
+
+    // Set ROV validator for ALL ASes so they can check ROV state
+    for (const auto& [asn, as_ptr] : graph.getAllASes()) {
+        as_ptr->setROVValidator(&graph.getROVValidator());
+    }
+
     if (!rov_asns_file.empty()) {
         auto rov_asns = CSVInput::parseROVASNs(rov_asns_file);
         rov_asns_set.insert(rov_asns.begin(), rov_asns.end());
         std::cout << "  Loaded " << rov_asns_set.size() << " ROV ASNs\n";
-        
-        // Enable ROV on these ASes
+
+        // Enable ROV filtering ONLY on ROV ASes - drop INVALID routes
         for (uint32_t asn : rov_asns_set) {
             AS* as = graph.getAS(asn);
             if (as) {
-                // Mark this AS as deploying ROV
-                // (In a full implementation, you'd set a ROV policy here)
+                as->setDropInvalid(true);
             }
         }
     } else {
@@ -121,40 +129,96 @@ int main(int argc, char* argv[]) {
     std::cout << "  ✓ Announcements parsed\n\n";
     
     // Step 4: Seed announcements into the graph
-    std::cout << "[4/5] Seeding Announcements into AS Graph...\n";
+    std::cout << "[4/5] Seeding Announcements and Simulating Propagation...\n";
     int seeded = 0;
     int skipped = 0;
-    
+
+    // First, create ROAs for valid announcements
+    for (const auto& input_ann : announcements) {
+        if (!input_ann.rov_invalid) {
+            // Add ROA for valid announcement
+            graph.getROVValidator().addROA(input_ann.prefix, input_ann.asn);
+        }
+    }
+
     for (const auto& input_ann : announcements) {
         AS* origin_as = graph.getAS(input_ann.asn);
-        
+
         if (!origin_as) {
             skipped++;
             continue;
         }
-        
-        // Create announcement
+
+        // Originate all announcements (including invalid ones)
+        // ROV-enabled ASes will drop invalid routes during propagation
         origin_as->originatePrefix(input_ann.prefix);
-        
-        // Set ROV state if invalid
-        if (input_ann.rov_invalid) {
-            auto& routing_table = const_cast<std::unordered_map<std::string, Announcement>&>(
-                origin_as->getRoutingTable()
-            );
-            
-            if (routing_table.count(input_ann.prefix)) {
-                routing_table[input_ann.prefix].setROVState(ROVState::INVALID);
-            }
-        }
-        
         seeded++;
     }
-    
+
     std::cout << "  Seeded: " << seeded << " announcements\n";
     if (skipped > 0) {
         std::cout << "  Skipped: " << skipped << " (ASN not in graph)\n";
     }
-    std::cout << "  ✓ Announcements seeded\n\n";
+
+    // Run BGPy-style hierarchical propagation until convergence
+    std::cout << "  Running hierarchical propagation...\n";
+    const auto& ranks = graph.getPropagationRanks();
+    int round = 0;
+    bool changed = true;
+
+    while (changed) {
+        round++;
+        changed = false;
+
+        // Phase 1: Propagate to providers (bottom-up through ranks)
+        for (size_t i = 0; i < ranks.size(); i++) {
+            // Process incoming from lower ranks (customers)
+            if (i > 0) {
+                for (AS* as_ptr : ranks[i]) {
+                    if (as_ptr->processIncomingQueue()) {
+                        changed = true;
+                    }
+                }
+            }
+            // Propagate ONLY to providers (higher ranks)
+            for (AS* as_ptr : ranks[i]) {
+                as_ptr->propagateToProviders();
+            }
+        }
+
+        // Phase 2: Propagate to peers (all ranks)
+        for (const auto& rank : ranks) {
+            for (AS* as_ptr : rank) {
+                as_ptr->propagateToPeers();
+            }
+        }
+        for (const auto& rank : ranks) {
+            for (AS* as_ptr : rank) {
+                if (as_ptr->processIncomingQueue()) {
+                    changed = true;
+                }
+            }
+        }
+
+        // Phase 3: Propagate to customers (top-down through ranks)
+        for (int i = ranks.size() - 1; i >= 0; i--) {
+            // Process incoming from higher ranks (providers)
+            if (i < (int)ranks.size() - 1) {
+                for (AS* as_ptr : ranks[i]) {
+                    if (as_ptr->processIncomingQueue()) {
+                        changed = true;
+                    }
+                }
+            }
+            // Propagate ONLY to customers (lower ranks)
+            for (AS* as_ptr : ranks[i]) {
+                as_ptr->propagateToCustomers();
+            }
+        }
+    }
+
+    std::cout << "  Converged after " << round << " rounds\n";
+    std::cout << "  ✓ Propagation complete\n\n";
     
     // Step 5: Export routing tables to CSV
     std::cout << "[5/5] Exporting Routing Tables...\n";

@@ -33,14 +33,24 @@ public:
     const ROVValidator& getROVValidator() const { return rov_validator_; }
     void enableROV(bool enable) { rov_enabled_ = enable; }
     bool isROVEnabled() const { return rov_enabled_; }
+
+    // Propagation ranks (BGPy-style hierarchical propagation)
+    void computePropagationRanks();
+    const std::vector<std::vector<AS*>>& getPropagationRanks() const { return propagation_ranks_; }
     
 private:
     std::map<uint32_t, std::unique_ptr<AS>> ases_;
     ROVValidator rov_validator_;
     bool rov_enabled_;
-    
+
+    // Propagation ranks: ASes grouped by hierarchy level
+    std::vector<std::vector<AS*>> propagation_ranks_;
+
     // Cycle detection helper
-    bool hasCycleDFS(const AS* node, 
+    bool hasCycleDFS(const AS* node,
                      std::unordered_map<uint32_t, int>& visited,
                      std::vector<uint32_t>& path) const;
+
+    // Propagation rank helpers
+    void assignRanksHelper(AS* as_obj, int rank);
 };

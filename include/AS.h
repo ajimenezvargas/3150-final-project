@@ -37,9 +37,17 @@ public:
     // Announcement/Routing (Day 3-5)
     void receiveAnnouncement(const Announcement& ann, AS* from);
     void originatePrefix(const std::string& prefix);
-    const std::unordered_map<std::string, Announcement>& getRoutingTable() const { 
-        return routing_table_; 
+    const std::unordered_map<std::string, Announcement>& getRoutingTable() const {
+        return routing_table_;
     }
+
+    // Round-based propagation
+    bool processIncomingQueue();  // Process queued announcements, returns true if changes made
+    void propagate();             // Propagate current routes to neighbors (legacy)
+    void propagateToProviders();  // Propagate only to providers
+    void propagateToPeers();      // Propagate only to peers
+    void propagateToCustomers();  // Propagate only to customers
+    bool hasQueuedAnnouncements() const { return !incoming_queue_.empty(); }
     
     // ROV Support (Day 5)
     void setROVValidator(const ROVValidator* validator) { rov_validator_ = validator; }
@@ -55,7 +63,15 @@ private:
     
     // Routing table: prefix -> best announcement
     std::unordered_map<std::string, Announcement> routing_table_;
-    
+
+    // Round-based propagation queue
+    struct QueuedAnnouncement {
+        Announcement ann;
+        AS* from;
+    };
+    std::vector<QueuedAnnouncement> incoming_queue_;
+    std::unordered_map<std::string, Announcement> routes_to_propagate_;
+
     // ROV (Day 5)
     const ROVValidator* rov_validator_;  // Pointer to graph's validator
     bool drop_invalid_;                   // Drop INVALID routes?

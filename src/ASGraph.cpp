@@ -81,7 +81,7 @@ bool ASGraph::hasCycle() const {
 std::vector<uint32_t> ASGraph::findCycle() const {
     std::unordered_map<uint32_t, int> visited;
     std::vector<uint32_t> path;
-    
+
     for (const auto& [asn, as_ptr] : ases_) {
         if (visited[asn] == 0) {
             if (hasCycleDFS(as_ptr.get(), visited, path)) {
@@ -89,6 +89,51 @@ std::vector<uint32_t> ASGraph::findCycle() const {
             }
         }
     }
-    
+
     return {};
+}
+
+void ASGraph::computePropagationRanks() {
+    // Reset all ranks
+    for (const auto& [asn, as_ptr] : ases_) {
+        as_ptr->setPropagationRank(-1);
+    }
+
+    // Assign ranks starting from all ASes
+    for (const auto& [asn, as_ptr] : ases_) {
+        assignRanksHelper(as_ptr.get(), 0);
+    }
+
+    // Find max rank
+    int max_rank = -1;
+    for (const auto& [asn, as_ptr] : ases_) {
+        max_rank = std::max(max_rank, as_ptr->getPropagationRank());
+    }
+
+    // Group ASes by rank
+    propagation_ranks_.clear();
+    propagation_ranks_.resize(max_rank + 1);
+
+    for (const auto& [asn, as_ptr] : ases_) {
+        int rank = as_ptr->getPropagationRank();
+        propagation_ranks_[rank].push_back(as_ptr.get());
+    }
+
+    // Sort ASes within each rank by ASN for determinism
+    for (auto& rank : propagation_ranks_) {
+        std::sort(rank.begin(), rank.end(),
+            [](const AS* a, const AS* b) { return a->getASN() < b->getASN(); });
+    }
+}
+
+void ASGraph::assignRanksHelper(AS* as_obj, int rank) {
+    // Only update if this rank is higher than current
+    if (as_obj->getPropagationRank() < rank) {
+        as_obj->setPropagationRank(rank);
+
+        // Recursively assign ranks to providers (they get rank + 1)
+        for (AS* provider : as_obj->getProviders()) {
+            assignRanksHelper(provider, rank + 1);
+        }
+    }
 }

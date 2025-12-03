@@ -61,37 +61,48 @@ std::vector<ROA> ROVValidator::getROAsForPrefix(const std::string& prefix) const
 }
 
 bool ROVValidator::isCoveredBy(const std::string& ann_prefix, const ROA& roa) const {
-    // Simplified: check if prefixes match exactly or if ann_prefix is more specific
-    // Real implementation would need proper IP prefix matching
-    
+    // Check if ann_prefix is covered by roa.prefix (proper IP prefix matching)
+
     std::string norm_ann = normalizePrefix(ann_prefix);
     std::string norm_roa = normalizePrefix(roa.prefix);
-    
-    // Extract IP parts (simplified - assumes valid format)
-    auto extract_ip = [](const std::string& pfx) -> std::string {
+
+    // Parse IP address as 32-bit integer
+    auto parseIP = [](const std::string& ip_str) -> uint32_t {
+        uint32_t result = 0;
+        std::istringstream iss(ip_str);
+        std::string octet;
+        int shift = 24;
+        while (std::getline(iss, octet, '.') && shift >= 0) {
+            result |= (std::stoul(octet) << shift);
+            shift -= 8;
+        }
+        return result;
+    };
+
+    // Extract IP and length
+    auto extractIPAndLen = [](const std::string& pfx) -> std::pair<std::string, int> {
         size_t slash = pfx.find('/');
         if (slash != std::string::npos) {
-            return pfx.substr(0, slash);
+            return {pfx.substr(0, slash), std::stoi(pfx.substr(slash + 1))};
         }
-        return pfx;
+        return {pfx, 32};
     };
-    
-    std::string ann_ip = extract_ip(norm_ann);
-    std::string roa_ip = extract_ip(norm_roa);
-    
-    int ann_len = getPrefixLength(ann_prefix);
-    int roa_len = getPrefixLength(roa.prefix);
-    
-    // Simplified: if IP addresses match and announcement is same or more specific
-    if (ann_ip == roa_ip && ann_len >= roa_len) {
+
+    auto [ann_ip_str, ann_len] = extractIPAndLen(norm_ann);
+    auto [roa_ip_str, roa_len] = extractIPAndLen(norm_roa);
+
+    uint32_t ann_ip = parseIP(ann_ip_str);
+    uint32_t roa_ip = parseIP(roa_ip_str);
+
+    // Create network mask for ROA prefix
+    uint32_t mask = (roa_len == 0) ? 0 : (~0u << (32 - roa_len));
+
+    // Check if announcement IP matches ROA network (after masking)
+    // and announcement is same specificity or more specific
+    if ((ann_ip & mask) == (roa_ip & mask) && ann_len >= roa_len) {
         return true;
     }
-    
-    // Exact match
-    if (norm_ann == norm_roa) {
-        return true;
-    }
-    
+
     return false;
 }
 
