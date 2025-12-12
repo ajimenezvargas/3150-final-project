@@ -244,13 +244,17 @@
                         <div id="rov-status" style="color: #A89AAB; font-size: 0.9em;"></div>
                     </div>
 
-                    <button type="submit" id="analyze-button">Analyze Data</button>
+                    <button type="submit" id="analyze-button">Run BGP Simulation</button>
                 </form>
 
                 <div id="results-section" class="results">
-                    <h3 style="color: #C84975; margin-bottom: 15px;">Data Analysis</h3>
+                    <h3 style="color: #C84975; margin-bottom: 15px;">Simulation Results</h3>
 
                     <div id="stats-container" style="margin-bottom: 20px;"></div>
+
+                    <div id="download-section" style="margin-top: 20px; display: none;">
+                        <button id="download-button" style="width: auto; padding: 12px 30px;">Download ribs.csv</button>
+                    </div>
 
                     <div>
                         <h4 style="color: #C84975; margin-top: 20px; margin-bottom: 10px;">AS Relationships Preview</h4>
@@ -282,10 +286,21 @@
         </footer>
     </div>
 
+    <script src="bgp_simulator_wasm.js"></script>
     <script>
         let caidaData = '';
         let announcementsData = '';
         let rovData = '';
+        let simulator = null;
+        let ribsCSV = '';
+        let wasmReady = false;
+
+        // Initialize WASM module
+        Module.onRuntimeInitialized = () => {
+            simulator = new Module.BGPSimulator();
+            wasmReady = true;
+            console.log('BGP Simulator WASM module loaded successfully');
+        };
 
         function showStatus(message, type) {
             const statusDiv = document.getElementById('status-message');
@@ -372,6 +387,11 @@
         document.getElementById('upload-form').addEventListener('submit', (e) => {
             e.preventDefault();
 
+            if (!wasmReady) {
+                showStatus('WASM module is still loading. Please wait...', 'info');
+                return;
+            }
+
             if (!caidaData) {
                 showStatus('Please upload CAIDA AS relationships file', 'error');
                 return;
@@ -382,12 +402,49 @@
                 return;
             }
 
-            analyzeData();
+            runSimulation();
         });
 
-        function analyzeData() {
+        function runSimulation() {
             try {
-                // Parse CAIDA data
+                showStatus('Running BGP simulation...', 'info');
+                const analyzeButton = document.getElementById('analyze-button');
+                analyzeButton.disabled = true;
+                analyzeButton.textContent = 'Simulating...';
+
+                // Reset simulator
+                simulator.reset();
+
+                // Load CAIDA data
+                const loadResult = simulator.loadCAIDAData(caidaData);
+                if (!loadResult.success) {
+                    throw new Error(loadResult.message || 'Failed to load CAIDA data');
+                }
+
+                // Load ROV ASNs if provided
+                if (rovData) {
+                    const rovResult = simulator.loadROVASNs(rovData);
+                    if (!rovResult.success) {
+                        console.warn('ROV loading warning:', rovResult.message);
+                    }
+                }
+
+                // Load announcements
+                const annResult = simulator.loadAnnouncements(announcementsData);
+                if (!annResult.success) {
+                    throw new Error(annResult.message || 'Failed to load announcements');
+                }
+
+                // Run the simulation
+                const simResult = simulator.runSimulation();
+                if (!simResult.success) {
+                    throw new Error(simResult.message || 'Simulation failed');
+                }
+
+                // Export routing tables to CSV
+                ribsCSV = simulator.exportRoutingTables();
+
+                // Parse for display statistics
                 const caidaLines = caidaData.split('\n').filter(l => l.trim() && !l.startsWith('#'));
                 const ases = new Set();
                 const relationships = [];
@@ -401,29 +458,10 @@
                     }
                 });
 
-                // Parse announcements data
-                const annLines = announcementsData.split('\n').filter(l => l.trim());
-                const announcements = [];
-                let isHeader = true;
+                const annLines = announcementsData.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+                const announcements = annLines.filter(l => !l.includes('origin') && !l.includes('asn'));
 
-                annLines.forEach(line => {
-                    if (isHeader && (line.includes('origin') || line.includes('asn'))) {
-                        isHeader = false;
-                        return;
-                    }
-                    if (line.trim()) {
-                        announcements.push(line.trim());
-                    }
-                });
-
-                // Count origin ASNs
-                const originAsns = new Set();
-                announcements.forEach(line => {
-                    const parts = line.split(',');
-                    if (parts.length >= 1) {
-                        originAsns.add(parts[0].trim());
-                    }
-                });
+                const totalRoutes = simulator.getTotalRouteCount();
 
                 // Display stats
                 const statsHtml = `
@@ -440,8 +478,8 @@
                         <div class="stat-label">Announcements</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value">${originAsns.size}</div>
-                        <div class="stat-label">Origin ASNs</div>
+                        <div class="stat-value">${totalRoutes}</div>
+                        <div class="stat-label">Total Routes</div>
                     </div>
                 `;
                 document.getElementById('stats-container').innerHTML = statsHtml;
@@ -456,13 +494,42 @@
                     (announcements.length > 10 ? `\n... and ${announcements.length - 10} more announcements` : '');
 
                 document.getElementById('results-section').classList.add('show');
-                showStatus('Data analyzed successfully!', 'success');
+                document.getElementById('download-section').style.display = 'block';
+                showStatus('Simulation completed successfully!', 'success');
                 document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
 
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = 'Run BGP Simulation';
+
             } catch (error) {
-                showStatus('Error analyzing data: ' + error.message, 'error');
+                showStatus('Error running simulation: ' + error.message, 'error');
+                console.error('Simulation error:', error);
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = 'Run BGP Simulation';
             }
         }
+
+        // Download ribs.csv
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('download-button').addEventListener('click', () => {
+                if (!ribsCSV) {
+                    showStatus('No simulation results to download', 'error');
+                    return;
+                }
+
+                const blob = new Blob([ribsCSV], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'ribs.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showStatus('ribs.csv downloaded successfully!', 'success');
+            });
+        });
 
         // Setup file uploads
         setupFileUpload('caida-upload', 'caida-file', 'caida-status');
