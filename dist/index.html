@@ -415,33 +415,35 @@
                 // Reset simulator
                 simulator.reset();
 
-                // Load CAIDA data
+                // Load CAIDA data (returns bool)
                 const loadResult = simulator.loadCAIDAData(caidaData);
-                if (!loadResult.success) {
-                    throw new Error(loadResult.message || 'Failed to load CAIDA data');
+                if (!loadResult) {
+                    throw new Error('Failed to load CAIDA data');
                 }
 
-                // Load ROV ASNs if provided
+                // Load ROV ASNs if provided (returns bool)
                 if (rovData) {
                     const rovResult = simulator.loadROVASNs(rovData);
-                    if (!rovResult.success) {
-                        console.warn('ROV loading warning:', rovResult.message);
+                    if (!rovResult) {
+                        console.warn('ROV loading warning: Failed to load ROV ASNs');
                     }
                 }
 
-                // Load announcements
+                // Load announcements (returns bool)
                 const annResult = simulator.loadAnnouncements(announcementsData);
-                if (!annResult.success) {
-                    throw new Error(annResult.message || 'Failed to load announcements');
+                if (!annResult) {
+                    throw new Error('Failed to load announcements');
                 }
 
-                // Run the simulation
-                const simResult = simulator.runSimulation();
-                if (!simResult.success) {
-                    throw new Error(simResult.message || 'Simulation failed');
+                // Run the simulation (returns JSON string)
+                const simResultStr = simulator.runSimulation();
+                const simResult = JSON.parse(simResultStr);
+
+                if (simResult.status !== 'success') {
+                    throw new Error('Simulation failed');
                 }
 
-                // Export routing tables to CSV
+                // Export routing tables to CSV (returns string)
                 ribsCSV = simulator.exportRoutingTables();
 
                 // Parse for display statistics

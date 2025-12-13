@@ -155,12 +155,31 @@ public:
 
     // Run the simulation and return results
     std::string runSimulation() {
+        // Compute propagation ranks
+        graph.computePropagationRanks();
+
+        // Set ROV validators for ASes
+        for (const auto& [asn, as] : graph.getAllASes()) {
+            if (rov_asns_set.count(asn)) {
+                // Create validator with all announcements
+                ROVValidator validator;
+                for (const auto& input_ann : announcements) {
+                    if (!input_ann.rov_invalid) {
+                        validator.addROA(input_ann.asn, input_ann.prefix);
+                    }
+                }
+                const_cast<AS*>(as.get())->setROVValidator(validator);
+            }
+        }
+
         // Seed announcements
+        int seeded = 0;
         for (const auto& input_ann : announcements) {
             AS* origin_as = graph.getAS(input_ann.asn);
             if (!origin_as) continue;
 
             origin_as->originatePrefix(input_ann.prefix);
+            seeded++;
 
             if (input_ann.rov_invalid) {
                 auto& routing_table = const_cast<std::unordered_map<std::string, Announcement>&>(
@@ -173,13 +192,70 @@ public:
             }
         }
 
+        // Run BGPy-style hierarchical propagation until convergence
+        const auto& ranks = graph.getPropagationRanks();
+        int round = 0;
+        bool changed = true;
+
+        while (changed) {
+            round++;
+            changed = false;
+
+            // Phase 1: Propagate to providers (bottom-up through ranks)
+            for (size_t i = 0; i < ranks.size(); i++) {
+                // Process incoming from lower ranks (customers)
+                if (i > 0) {
+                    for (AS* as_ptr : ranks[i]) {
+                        if (as_ptr->processIncomingQueue()) {
+                            changed = true;
+                        }
+                    }
+                }
+                // Propagate ONLY to providers (higher ranks)
+                for (AS* as_ptr : ranks[i]) {
+                    as_ptr->propagateToProviders();
+                }
+            }
+
+            // Phase 2: Propagate to peers (all ranks)
+            for (const auto& rank : ranks) {
+                for (AS* as_ptr : rank) {
+                    as_ptr->propagateToPeers();
+                }
+            }
+            for (const auto& rank : ranks) {
+                for (AS* as_ptr : rank) {
+                    if (as_ptr->processIncomingQueue()) {
+                        changed = true;
+                    }
+                }
+            }
+
+            // Phase 3: Propagate to customers (top-down through ranks)
+            for (int i = ranks.size() - 1; i >= 0; i--) {
+                // Process incoming from higher ranks (providers)
+                if (i < (int)ranks.size() - 1) {
+                    for (AS* as_ptr : ranks[i]) {
+                        if (as_ptr->processIncomingQueue()) {
+                            changed = true;
+                        }
+                    }
+                }
+                // Propagate ONLY to customers (lower ranks)
+                for (AS* as_ptr : ranks[i]) {
+                    as_ptr->propagateToCustomers();
+                }
+            }
+        }
+
         // Build result JSON
         std::ostringstream result;
         result << "{";
         result << "\"status\": \"success\",";
         result << "\"total_routes\": " << getTotalRouteCount() << ",";
         result << "\"total_ases\": " << graph.getAllASes().size() << ",";
-        result << "\"announcements_seeded\": " << announcements.size();
+        result << "\"announcements_seeded\": " << seeded << ",";
+        result << "\"rounds\": " << round;
         result << "}";
 
         return result.str();
@@ -216,16 +292,39 @@ public:
     // Export all routing tables as CSV
     std::string exportRoutingTables() {
         std::ostringstream csv;
-        csv << "ASN,Prefix,Path\n";
+        csv << "asn,prefix,as_path\n";
 
         for (const auto& [asn, as] : graph.getAllASes()) {
             const auto& routing_table = as->getRoutingTable();
             for (const auto& [prefix, announcement] : routing_table) {
-                csv << asn << "," << prefix << "\n";
+                csv << asn << ",";
+                csv << prefix << ",\"";
+                csv << formatASPath(announcement.getASPath());
+                csv << "\"\n";
             }
         }
 
         return csv.str();
+    }
+
+    // Format AS path as tuple string
+    std::string formatASPath(const std::vector<uint32_t>& path) {
+        if (path.empty()) {
+            return "";
+        }
+
+        std::ostringstream oss;
+        oss << "(";
+        for (size_t i = 0; i < path.size(); i++) {
+            oss << path[i];
+            if (i < path.size() - 1) {
+                oss << ", ";
+            } else if (path.size() == 1) {
+                oss << ",";  // Trailing comma for single-element paths
+            }
+        }
+        oss << ")";
+        return oss.str();
     }
 
     int getTotalRouteCount() {
